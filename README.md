@@ -23,8 +23,8 @@ ADE collects this context into a single SQLite catalog and makes it queryable �
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/rbutinar/ade-core.git
-cd ade-core
+git clone https://github.com/rbutinar/ade-catalog.git
+cd ade-catalog
 pip install -r requirements.txt
 
 # 2. Build the demo catalog
@@ -45,7 +45,7 @@ ADE works with any Claude client that supports MCP (Model Context Protocol).
 The `.mcp.json` in the repo auto-starts the server. Just open the project:
 
 ```bash
-cd ade-core
+cd ade-catalog
 claude
 ```
 
@@ -61,7 +61,7 @@ Add to your config file:
     "ade": {
       "command": "python",
       "args": ["-m", "ade_app.mcp_server.server"],
-      "cwd": "/path/to/ade-core"
+      "cwd": "/path/to/ade-catalog"
     }
   }
 }
@@ -140,7 +140,7 @@ streamlit run ade_app/streamlit_app/Home.py
 ## Project Structure
 
 ```
-ade-core/
+ade-catalog/
 ├── ade_app/
 │   ├── core/                     # CatalogDB (SQLite backend)
 │   ├── platforms/

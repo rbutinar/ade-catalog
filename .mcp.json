@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "ade-core": {
+    "ade-catalog": {
       "command": "python",
       "args": ["-m", "ade_app.mcp_server.server"]
     }

@@ -34,7 +34,7 @@ mcp = FastMCP("ade")
 # CONFIGURATION
 # =============================================================================
 
-# Repository root (ade-core/)
+# Repository root (ade-catalog/)
 REPO_ROOT = Path(__file__).parent.parent.parent
 ADE_DATA_ROOT = REPO_ROOT / "ade_data"
 
@@ -543,7 +543,7 @@ async def get_ade_overview() -> dict:
             "3. get_object_details('name', 'databricks') - Get full details"
         ],
         "current_environment": _current_environment,
-        "repository": "https://github.com/robertobutinar/ade-core"
+        "repository": "https://github.com/rbutinar/ade-catalog"
     }
 
 

@@ -34,7 +34,7 @@ PAGE_CONFIG = {
     "initial_sidebar_state": "expanded",
 }
 
-# Supported platforms in ade-core
+# Supported platforms in ade-catalog
 SUPPORTED_PLATFORMS = {
     "databricks": {"icon": "⚡", "name": "Databricks"},
     "powerbi": {"icon": "📊", "name": "Power BI"},
