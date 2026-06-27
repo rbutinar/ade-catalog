@@ -1,8 +1,8 @@
-# Agentic Data Engineer (ADE) - Core
+# Agentic Data Engineer (ADE) - Catalog
 
 **ADE** provides the structured context that transforms AI agents from code assistants into autonomous data engineering partners.
 
-![Web Catalog Walkthrough](docs/ade-core-web-catalog-walkthrough.gif)
+![Web Catalog Walkthrough](docs/web-catalog-walkthrough.gif)
 
 [![Full Video Demo](https://img.shields.io/badge/YouTube-Full%20Demo%20Walkthrough-red?style=for-the-badge&logo=youtube)](https://youtu.be/8gM8PfkBYIk)
 
