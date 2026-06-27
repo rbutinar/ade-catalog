@@ -75,3 +75,6 @@ CLAUDE.md
 
 # Project data
 _data/
+
+# Local launchers (machine-specific absolute paths)
+start_mcp.bat
