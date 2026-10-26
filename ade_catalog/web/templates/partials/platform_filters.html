@@ -1,0 +1,115 @@
+<!-- Platform-specific cascading filters -->
+{% if platform == 'fabric' and fabric_workspaces %}
+<div class="flex flex-col sm:flex-row gap-3 items-start">
+    <!-- Fabric: Workspace -->
+    <div class="flex-1 min-w-0">
+        <label class="block text-xs text-gray-500 mb-1">Workspace</label>
+        <select name="filter_workspace"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white
+                       focus:border-sky-500 focus:outline-none"
+                hx-get="/catalog/filters/containers"
+                hx-trigger="change"
+                hx-target="#container-filter"
+                hx-swap="innerHTML">
+            <option value="">All workspaces</option>
+            {% for ws in fabric_workspaces %}
+            <option value="{{ ws.workspace_id }}">
+                {{ ws.workspace_name }}
+                ({{ ws.warehouse_count }}WH {{ ws.lakehouse_count }}LH {{ ws.pipeline_count }}P)
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Fabric: Container (loaded on workspace select) -->
+    <div class="flex-1 min-w-0" id="container-filter">
+        <label class="block text-xs text-gray-500 mb-1">Container</label>
+        <select name="filter_container" disabled
+                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-gray-400">
+            <option value="">Select workspace first</option>
+        </select>
+    </div>
+
+    <!-- Fabric: Schema (loaded on container select) -->
+    <div class="flex-1 min-w-0" id="schema-filter">
+        <label class="block text-xs text-gray-500 mb-1">Schema</label>
+        <select name="filter_schema" disabled
+                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-gray-50 text-gray-400">
+            <option value="">Select container first</option>
+        </select>
+    </div>
+
+    <!-- Apply button -->
+    <div class="self-end">
+        <button class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+                hx-get="/catalog/search"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type'],[name='filter_workspace'],[name='filter_container'],[name='filter_schema']">
+            Apply
+        </button>
+    </div>
+</div>
+
+{% elif platform == 'powerbi' and pbi_reports %}
+<div class="flex flex-col sm:flex-row gap-3 items-start">
+    <!-- Power BI: Report / Semantic Model -->
+    <div class="flex-1 min-w-0">
+        <label class="block text-xs text-gray-500 mb-1">Report / Semantic Model</label>
+        <select name="filter_report"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white
+                       focus:border-sky-500 focus:outline-none"
+                hx-get="/catalog/search"
+                hx-trigger="change"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type']">
+            <option value="">All reports</option>
+            {% for rpt in pbi_reports %}
+            <option value="{{ rpt.report_id }}">
+                {{ rpt.report_name }} ({{ rpt.dataset_count }} datasets)
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="self-end">
+        <button class="rounded-md bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700
+                       focus:outline-none focus:ring-2 focus:ring-amber-500"
+                hx-get="/catalog/search"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type'],[name='filter_report']">
+            Apply
+        </button>
+    </div>
+</div>
+
+{% elif platform == 'databricks' and dbx_workspaces %}
+<div class="flex flex-col sm:flex-row gap-3 items-start">
+    <!-- Databricks: Workspace -->
+    <div class="flex-1 min-w-0">
+        <label class="block text-xs text-gray-500 mb-1">Workspace</label>
+        <select name="filter_workspace"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white
+                       focus:border-sky-500 focus:outline-none"
+                hx-get="/catalog/search"
+                hx-trigger="change"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type']">
+            <option value="">All workspaces</option>
+            {% for ws in dbx_workspaces %}
+            <option value="{{ ws.workspace_id }}">{{ ws.workspace_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="self-end">
+        <button class="rounded-md bg-orange-600 px-4 py-2 text-sm text-white hover:bg-orange-700
+                       focus:outline-none focus:ring-2 focus:ring-orange-500"
+                hx-get="/catalog/search"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type'],[name='filter_workspace']">
+            Apply
+        </button>
+    </div>
+</div>
+{% endif %}

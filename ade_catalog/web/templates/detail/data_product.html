@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ dp.display_name }} · Data Product{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <div class="flex items-center gap-3">
+    <h1 class="text-2xl font-bold text-gray-900">{{ dp.display_name }}</h1>
+    <span class="inline-flex items-center rounded-full bg-teal-100 text-teal-700 px-2.5 py-0.5 text-xs font-medium">Data Product</span>
+    <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-0.5 text-xs font-medium">cross-platform</span>
+  </div>
+  {% if dp.props.domain %}
+  <p class="mt-1 text-sm text-gray-500">Domain: <span class="font-medium text-gray-700">{{ dp.props.domain }}</span></p>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <div class="text-xs uppercase tracking-wide text-gray-400">Members</div>
+    <div class="text-2xl font-semibold text-gray-900">{{ dp.members|length }}</div>
+  </div>
+  <div class="bg-white rounded-lg border border-gray-200 p-4 sm:col-span-2">
+    <div class="text-xs uppercase tracking-wide text-gray-400">Description</div>
+    <p class="text-sm text-gray-700 whitespace-pre-line">{{ dp.props.description or "—" }}</p>
+  </div>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200">
+  <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-900">Members</h2>
+    <div class="flex items-center gap-2">
+      <input type="text" name="q" placeholder="Add member: search assets…"
+             hx-get="/data-product/{{ dp.node_id }}/search" hx-trigger="keyup changed delay:300ms"
+             hx-target="#dp-candidates" hx-swap="innerHTML"
+             class="rounded-md border border-gray-300 px-3 py-1 text-sm w-72 focus:outline-none focus:ring-1 focus:ring-sky-400">
+    </div>
+  </div>
+  <div id="dp-candidates" class="empty:hidden"></div>
+  <div id="dp-members">
+    {% with members=dp.members, dp_id=dp.node_id %}
+      {% include "partials/data_product_members.html" %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}

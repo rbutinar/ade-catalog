@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ade-catalog": {
+      "command": "python",
+      "args": ["-m", "ade_catalog.mcp_server.stdio"]
+    }
+  }
+}

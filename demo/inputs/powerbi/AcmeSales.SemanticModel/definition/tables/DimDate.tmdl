@@ -1,0 +1,125 @@
+/// Date dimension table for time intelligence
+table DimDate
+	lineageTag: 58304ef5-60a1-4d9b-9e8c-2b7fe5b344b3
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 091cd5d9-c1cf-4143-9aee-ed076532713b
+		isKey
+		summarizeBy: none
+		sourceColumn: [Date]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateKey
+		dataType: string
+		lineageTag: 6980f6d9-82ae-4769-8253-4e33f4264a9c
+		summarizeBy: none
+		sourceColumn: [DateKey]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b50068f-45a6-489a-93a6-8738a2384947
+		summarizeBy: none
+		sourceColumn: [Year]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: 4360e775-3440-454c-bd20-83b6266a5e83
+		summarizeBy: none
+		sourceColumn: [Quarter]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: int64
+		formatString: 0
+		lineageTag: 4e988da3-cffc-4f12-b3dd-bc450f6e0774
+		summarizeBy: none
+		sourceColumn: [Month]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthName
+		dataType: string
+		lineageTag: 949cbfcd-067f-4173-abb0-70d8759b6a01
+		summarizeBy: none
+		sourceColumn: [MonthName]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: 3ddbe20a-ee4d-47d4-8604-0770c02f0b83
+		summarizeBy: none
+		sourceColumn: [Day]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekDay
+		dataType: int64
+		formatString: 0
+		lineageTag: 4de14449-6f54-4b05-845a-4009d375be78
+		summarizeBy: none
+		sourceColumn: [WeekDay]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekDayName
+		dataType: string
+		lineageTag: 29753141-5b4d-4381-9b5b-cc407615eb5e
+		summarizeBy: none
+		sourceColumn: [WeekDayName]
+		isNameInferred
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Calendar
+		lineageTag: b1c2d3e4-f567-8901-abcd-ef1234567830
+
+		level Year
+			lineageTag: b1c2d3e4-f567-8901-abcd-ef1234567831
+			column: Year
+
+		level Quarter
+			lineageTag: b1c2d3e4-f567-8901-abcd-ef1234567832
+			column: Quarter
+
+		level Month
+			lineageTag: b1c2d3e4-f567-8901-abcd-ef1234567833
+			column: MonthName
+
+		level Day
+			lineageTag: b1c2d3e4-f567-8901-abcd-ef1234567834
+			column: Day
+
+	partition DimDate = calculated
+		mode: import
+		source =
+				ADDCOLUMNS(
+				    CALENDAR(DATE(2025, 1, 1), DATE(2026, 12, 31)),
+				    "DateKey", FORMAT([Date], "YYYYMMDD"),
+				    "Year", YEAR([Date]),
+				    "Quarter", "Q" & QUARTER([Date]),
+				    "Month", MONTH([Date]),
+				    "MonthName", FORMAT([Date], "MMMM"),
+				    "Day", DAY([Date]),
+				    "WeekDay", WEEKDAY([Date]),
+				    "WeekDayName", FORMAT([Date], "dddd")
+				)

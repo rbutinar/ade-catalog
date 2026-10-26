@@ -1,0 +1,16 @@
+relationship 187b7d71-738f-46b4-935c-d39f65b8a3c3
+	joinOnDateBehavior: datePartOnly
+	fromColumn: FactSales.sale_date
+	toColumn: LocalDateTable_6fafbd15-06d4-4569-948c-ff23df633439.Date
+
+relationship DimProduct_FactSales
+	fromColumn: FactSales.product_id
+	toColumn: DimProduct.product_id
+
+relationship DimCustomer_FactSales
+	fromColumn: FactSales.customer_id
+	toColumn: DimCustomer.cd_customer
+
+relationship DimDate_FactSales
+	fromColumn: FactSales.sale_date
+	toColumn: DimDate.Date

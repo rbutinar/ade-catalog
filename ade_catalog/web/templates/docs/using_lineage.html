@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Understanding Lineage - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Understanding Lineage</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Understanding Lineage</h1>
+
+    <div class="space-y-8">
+
+        <!-- What is lineage -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">What is Data Lineage?</h2>
+            <p class="text-sm text-gray-700">
+                Data lineage shows <strong>how data flows</strong> through your analytics environment.
+                It answers questions like:
+            </p>
+            <ul class="text-sm text-gray-600 space-y-2 mt-3 ml-4 list-disc">
+                <li>Where does this table's data come from? (<strong>upstream</strong>)</li>
+                <li>What reports and dashboards use this table? (<strong>downstream</strong>)</li>
+                <li>If I change this column, what will break?</li>
+                <li>Which notebooks transform this data?</li>
+                <li>How does data flow from source to Power BI report?</li>
+            </ul>
+        </section>
+
+        <!-- Cross-platform -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Cross-Platform Lineage</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                ade-catalog builds lineage <strong>across platforms</strong>. A single lineage graph can show:
+            </p>
+            <div class="bg-gray-50 rounded p-4 text-sm font-mono text-gray-700 leading-relaxed">
+                <pre class="whitespace-pre overflow-x-auto">
+Source Files (CSV/Excel)
+    &darr; ingested by
+Databricks Notebook (bronze layer)
+    &darr; transforms to
+Fabric Lakehouse Table (silver)
+    &darr; aggregated by
+Fabric Warehouse Table (gold)
+    &darr; consumed by
+Power BI Dataset
+    &darr; visualized in
+Power BI Report</pre>
+            </div>
+        </section>
+
+        <!-- Relationship types -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Relationship Types</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                Lineage edges are categorized by type:
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-semibold text-blue-700">Data Flow</p>
+                    <p class="text-xs text-gray-500">feeds, produces, consumes, transforms_to, copies_to</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-semibold text-green-700">Structure</p>
+                    <p class="text-xs text-gray-500">belongs_to, contains, hosted_in, stored_in</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-semibold text-purple-700">Orchestration</p>
+                    <p class="text-xs text-gray-500">triggers, schedules, depends_on, runs_after</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-semibold text-amber-700">Reference</p>
+                    <p class="text-xs text-gray-500">displays, uses, references, visualizes, calculates</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How to use -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Using Lineage</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                Lineage is available in two ways:
+            </p>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Web UI (coming soon)</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        Interactive lineage graph on object detail pages. Select direction (upstream/downstream),
+                        depth, and relationship filter. Rendered as a Mermaid flowchart.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">MCP / AI Agents</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        Use the <code class="text-xs bg-gray-100 px-1 rounded">get_lineage</code> tool via MCP to
+                        ask an AI assistant: "Show me what feeds into the gold_sales table" or
+                        "What downstream reports would break if I change this column?"
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

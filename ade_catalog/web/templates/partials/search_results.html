@@ -1,0 +1,45 @@
+{% if results is defined and results|length > 0 %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-3 border-b border-gray-200">
+        <p class="text-sm text-gray-500">
+            {{ results|length }} result{{ 's' if results|length != 1 }}
+            {% if query %} for "<span class="font-medium text-gray-700">{{ query }}</span>"{% endif %}
+        </p>
+    </div>
+    <div class="divide-y divide-gray-100">
+        {% for r in results %}
+        <a href="/detail/{{ r.object_type }}/{{ r.id }}"
+           class="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ r.name }}</p>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                          {% if r.platform == 'databricks' %}bg-orange-100 text-orange-700
+                          {% elif r.platform == 'fabric' %}bg-teal-100 text-teal-700
+                          {% else %}bg-amber-100 text-amber-700{% endif %}">
+                        {{ r.platform }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+                        {% if r.object_type == 'wh_table' %}warehouse table
+                        {% elif r.object_type == 'lh_table' %}lakehouse table
+                        {% elif r.object_type == 'fab_notebook' %}notebook
+                        {% elif r.object_type == 'pbi_table' %}table
+                        {% else %}{{ r.object_type }}{% endif %}
+                    </span>
+                </div>
+                {% if r.description %}
+                <p class="text-xs text-gray-500 mt-0.5 truncate">{{ r.description }}</p>
+                {% endif %}
+            </div>
+            {% if r.layer %}
+            <span class="ml-3 text-xs text-gray-400">{{ r.layer }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% elif query is defined and query %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-sm text-gray-500">No results for "<span class="font-medium">{{ query }}</span>"</p>
+</div>
+{% endif %}

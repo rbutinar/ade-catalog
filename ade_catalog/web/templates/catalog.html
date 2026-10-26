@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}Catalog - ade-catalog{% endblock %}
+
+{% block head %}
+<style>
+    /* Multi-select dropdown styling */
+    .ms-wrap { position: relative; display: inline-block; min-width: 140px; }
+    .ms-trigger { display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+                  border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 8px;
+                  font-size: 0.875rem; background: white; cursor: pointer; min-height: 34px; }
+    .ms-trigger:hover { border-color: #93c5fd; }
+    .ms-trigger .ms-tag { display: inline-flex; align-items: center; gap: 2px;
+                          background: #e0f2fe; color: #0369a1; border-radius: 4px;
+                          padding: 1px 6px; font-size: 0.75rem; font-weight: 500; }
+    .ms-trigger .ms-tag .ms-remove { cursor: pointer; opacity: 0.6; }
+    .ms-trigger .ms-tag .ms-remove:hover { opacity: 1; }
+    .ms-trigger .ms-placeholder { color: #9ca3af; font-size: 0.75rem; }
+    .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0;
+                   background: white; border: 1px solid #d1d5db; border-radius: 6px;
+                   margin-top: 2px; z-index: 50; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; }
+    .ms-dropdown.open { display: block; }
+    .ms-option { padding: 6px 10px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .ms-option:hover { background: #f0f9ff; }
+    .ms-option.selected { background: #e0f2fe; }
+    .ms-option input { pointer-events: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Data Catalog</h1>
+    <p class="mt-1 text-sm text-gray-500">Search and explore metadata across platforms</p>
+</div>
+
+<!-- Search & Filters -->
+<div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <!-- Search input -->
+        <input type="text" name="q" id="search-input" placeholder="Search by name..."
+               value="{{ request.args.get('q', '') }}"
+               class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm
+                      focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+               hx-get="/catalog/search"
+               hx-trigger="keyup changed delay:300ms, search"
+               hx-target="#search-results"
+               hx-include="[name='platform'],[name='type'],[name='limit'],[name='filter_workspace'],[name='filter_environment']"
+               hx-indicator="#search-spinner">
+
+        <!-- Platform filter -->
+        <div class="ms-wrap" data-name="platform" data-placeholder="All platforms">
+            {% for p in available_platforms %}
+            <input type="hidden" name="platform" value="{{ p.platform }}" disabled
+                   data-label="{{ p.label }} ({{ p.count }})"
+                   {% if p.platform in selected_platforms %}data-selected="true"{% endif %}>
+            {% endfor %}
+        </div>
+
+        <!-- Type filter (reflects the platforms present; narrows when a platform is picked) -->
+        {% set plats = available_platforms|map(attribute='platform')|list %}
+        {% set sel = selected_platforms %}
+        {% macro type_opt(val, label) %}
+            <input type="hidden" name="type" value="{{ val }}" disabled data-label="{{ label }}"
+                   {% if val in selected_types %}data-selected="true"{% endif %}>
+        {% endmacro %}
+        <div class="ms-wrap" data-name="type" data-placeholder="All types">
+            {% if available_types %}
+            {# lineage-first orgs: types come straight from the graph #}
+            {% for t in available_types %}
+                {{ type_opt(t.value, t.label) }}
+            {% endfor %}
+            {% else %}
+            {% if 'databricks' in plats and (not sel or 'databricks' in sel) %}
+                {{ type_opt('notebook', 'Notebooks') }}
+                {{ type_opt('table', 'Tables') }}
+            {% endif %}
+            {% if 'powerbi' in plats and (not sel or 'powerbi' in sel) %}
+                {{ type_opt('report', 'Reports') }}
+                {{ type_opt('dataset', 'Datasets') }}
+                {{ type_opt('table', 'Tables') }}
+                {{ type_opt('measure', 'Measures') }}
+                {{ type_opt('page', 'Report Pages') }}
+                {{ type_opt('visual', 'Visuals') }}
+                {{ type_opt('relationship', 'Relationships') }}
+                {{ type_opt('column', 'Columns') }}
+            {% endif %}
+            {% if 'fabric' in plats and (not sel or 'fabric' in sel) %}
+                {{ type_opt('pipeline', 'Pipelines') }}
+                {{ type_opt('warehouse', 'Warehouses') }}
+                {{ type_opt('lakehouse', 'Lakehouses') }}
+                {{ type_opt('fab_notebook', 'Fabric Notebooks') }}
+                {{ type_opt('wh_table', 'Warehouse Tables') }}
+                {{ type_opt('lh_table', 'Lakehouse Tables') }}
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Limit selector -->
+        <select name="limit" id="limit-select"
+                class="w-20 rounded-md border border-gray-300 px-2 py-2 text-sm bg-white focus:border-sky-500 focus:outline-none"
+                hx-get="/catalog/search"
+                hx-trigger="change"
+                hx-target="#search-results"
+                hx-include="[name='q'],[name='platform'],[name='type']">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+        </select>
+
+        <span id="search-spinner" class="htmx-indicator text-sm text-gray-400 self-center">
+            searching...
+        </span>
+    </div>
+
+    <!-- Advanced filters (platform-specific, cascading) -->
+    {% set plats = available_platforms|map(attribute='platform')|list %}
+    {% if 'fabric' in plats or 'databricks' in plats or 'powerbi' in plats %}
+    <details class="mt-3 rounded-md border border-gray-200 bg-gray-50">
+        <summary class="cursor-pointer select-none px-4 py-2 text-sm font-medium text-gray-600
+                        hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+            Advanced Filters
+            <span class="text-xs text-gray-400 ml-1">narrow down by workspace, warehouse, schema...</span>
+        </summary>
+        <div class="px-4 py-3 border-t border-gray-200 space-y-3">
+
+            {% if 'fabric' in plats %}
+            <div>
+                <p class="text-xs font-semibold text-teal-700 mb-2">Fabric</p>
+                <div class="flex flex-wrap gap-3">
+                    {% if fabric_environments %}
+                    <div class="flex-1 min-w-[160px]">
+                        <label class="block text-xs text-gray-500 mb-1">Environment</label>
+                        <select name="filter_environment" id="filter-environment"
+                                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white"
+                                hx-get="/catalog/filters/workspaces"
+                                hx-trigger="change"
+                                hx-target="#fabric-workspace-wrap"
+                                hx-swap="outerHTML"
+                                hx-include="[name='filter_environment']"
+                                hx-indicator="#search-spinner">
+                            <option value="">All environments</option>
+                            {% set has_personal = fabric_environments|selectattr('value','equalto','personal-copy')|list|length > 0 %}
+                            {% if has_personal %}
+                            <option value="exclude-personal" {% if selected_environment == 'exclude-personal' %}selected{% endif %}>
+                                Exclude personal copies
+                            </option>
+                            {% endif %}
+                            {% for env in fabric_environments %}
+                            <option value="{{ env.value }}" {% if selected_environment == env.value %}selected{% endif %}>
+                                {{ env.label }} ({{ env.count }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    {% include "partials/fabric_workspace_select.html" %}
+                    <div id="fabric-cascade" class="flex flex-wrap gap-3 flex-1">
+                        <!-- Cascading filters loaded via HTMX -->
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if 'powerbi' in plats %}
+            <div>
+                <p class="text-xs font-semibold text-amber-700 mb-2">Power BI</p>
+                <div class="flex flex-wrap gap-3">
+                    <div class="flex-1 min-w-[160px]">
+                        <label class="block text-xs text-gray-500 mb-1">Report</label>
+                        <select name="filter_report"
+                                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white"
+                                hx-get="/catalog/filters/datasets"
+                                hx-trigger="change"
+                                hx-target="#pbi-cascade"
+                                hx-include="[name='filter_report']">
+                            <option value="">All</option>
+                            {% for rpt in pbi_reports %}
+                            <option value="{{ rpt.report_id }}">{{ rpt.report_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="pbi-cascade" class="flex flex-wrap gap-3 flex-1">
+                        <!-- Dataset dropdown loaded via HTMX -->
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if 'databricks' in plats %}
+            <div>
+                <p class="text-xs font-semibold text-orange-700 mb-2">Databricks</p>
+                <div class="flex flex-wrap gap-3">
+                    <div class="flex-1 min-w-[160px]">
+                        <label class="block text-xs text-gray-500 mb-1">Workspace</label>
+                        <select name="filter_dbx_workspace"
+                                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white">
+                            <option value="">All</option>
+                            {% for ws in dbx_workspaces %}
+                            <option value="{{ ws.workspace_id }}">{{ ws.workspace_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </details>
+    {% endif %}
+</div>
+
+<!-- Results -->
+<div id="search-results">
+    {% include "partials/catalog_results.html" %}
+</div>
+
+<script>
+// Multi-select dropdown component
+document.querySelectorAll('.ms-wrap').forEach(wrap => {
+    const name = wrap.dataset.name;
+    const placeholder = wrap.dataset.placeholder || 'Select...';
+    const inputs = Array.from(wrap.querySelectorAll('input[type=hidden]'));
+
+    const trigger = document.createElement('div');
+    trigger.className = 'ms-trigger';
+    wrap.appendChild(trigger);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ms-dropdown';
+    wrap.appendChild(dropdown);
+
+    inputs.forEach(input => {
+        const opt = document.createElement('div');
+        opt.className = 'ms-option';
+        opt.dataset.value = input.value;
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = input.dataset.selected === 'true';
+        opt.appendChild(cb);
+        opt.appendChild(document.createTextNode(' ' + input.dataset.label));
+        if (cb.checked) { input.disabled = false; opt.classList.add('selected'); }
+        opt.addEventListener('click', () => {
+            cb.checked = !cb.checked;
+            input.disabled = !cb.checked;
+            opt.classList.toggle('selected', cb.checked);
+            render();
+            triggerSearch();
+        });
+        dropdown.appendChild(opt);
+    });
+
+    function render() {
+        trigger.innerHTML = '';
+        const selected = inputs.filter(i => !i.disabled);
+        if (selected.length === 0) {
+            trigger.innerHTML = '<span class="ms-placeholder">' + placeholder + '</span>';
+        } else {
+            selected.forEach(input => {
+                const tag = document.createElement('span');
+                tag.className = 'ms-tag';
+                tag.textContent = input.dataset.label.split(' (')[0];
+                const rm = document.createElement('span');
+                rm.className = 'ms-remove';
+                rm.innerHTML = ' &times;';
+                rm.addEventListener('click', e => {
+                    e.stopPropagation();
+                    input.disabled = true;
+                    const o = dropdown.querySelector('[data-value="'+input.value+'"]');
+                    if(o) { o.classList.remove('selected'); o.querySelector('input').checked = false; }
+                    render();
+                    triggerSearch();
+                });
+                tag.appendChild(rm);
+                trigger.appendChild(tag);
+            });
+        }
+    }
+
+    trigger.addEventListener('click', () => {
+        document.querySelectorAll('.ms-dropdown.open').forEach(d => { if(d !== dropdown) d.classList.remove('open'); });
+        dropdown.classList.toggle('open');
+    });
+    render();
+});
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+function triggerSearch() {
+    const input = document.querySelector('[name="q"]');
+    if (input) htmx.trigger(input, 'search');
+}
+</script>
+{% endblock %}

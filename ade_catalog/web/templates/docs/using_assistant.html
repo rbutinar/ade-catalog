@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Using the Assistant - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Using the Assistant</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">&#10024; Using the Catalog Assistant</h1>
+
+    <div class="space-y-8">
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">What it is</h2>
+            <p class="text-sm text-gray-700">
+                A chat panel, available on every page (the &#10024; button, bottom-right), for asking
+                natural-language questions about the catalog. It does not guess — it answers by
+                <strong>calling the catalog's own search and lineage tools</strong> (the same ones exposed
+                over MCP), so numbers and names come straight from the database.
+            </p>
+            <p class="text-sm text-gray-700 mt-3">Examples:</p>
+            <ul class="text-sm text-gray-600 space-y-1.5 mt-2 ml-4 list-disc">
+                <li>"How many reports are about sales?"</li>
+                <li>"Which tables feed the 'Total Revenue' measure?"</li>
+                <li>"List the Fabric pipelines in this catalog."</li>
+            </ul>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Navigating from answers</h2>
+            <p class="text-sm text-gray-700">
+                When the assistant names a specific object, it can offer a link straight to that
+                object's <strong>detail page</strong> and its <strong>lineage view</strong> — click through
+                instead of searching the Catalog yourself. Links open in a new tab so the chat stays open.
+            </p>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Scope: it only sees your active catalog</h2>
+            <p class="text-sm text-gray-700">
+                The assistant is bound to the organization and view you currently have selected (shown in
+                the chat header). This is enforced by the app, not by the assistant's own judgement — it
+                cannot be asked to look at another organization's or view's data. Switch org/view with the
+                selectors in the top navigation, then ask again.
+            </p>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Tips</h2>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Full-page mode</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        Use the expand icon in the chat header for a wider, easier-to-read layout on long
+                        answers — click again to return to the side panel.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Broad questions take longer</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        A specific question ("what feeds measure X") answers in a few seconds. An open-ended
+                        one ("tell me everything about sales") may take longer, since the assistant explores
+                        with several searches before answering.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Fresh conversation</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        Use the &#8635; (reset) button in the chat header to start over — useful if you're
+                        switching to an unrelated topic.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Not seeing the chat button?</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        The assistant needs an API key configured by an administrator
+                        (see <a href="{{ url_for('docs.architecture') }}" class="text-sky-600 hover:text-sky-700">Architecture</a>).
+                        Without one, the panel explains this instead of showing the chat.
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Admin Console - ade-catalog{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Admin Console</h1>
+    <p class="mt-1 text-sm text-gray-500">Manage users, organizations, and system settings</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <a href="{{ url_for('admin.users') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Users</p>
+        <p class="text-3xl font-bold text-gray-900 mt-2">{{ user_count }}</p>
+        <p class="text-sm text-sky-600 mt-2">Manage users &rarr;</p>
+    </a>
+
+    <a href="{{ url_for('admin.orgs') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">Organizations</p>
+        <p class="text-3xl font-bold text-gray-900 mt-2">{{ org_count }}</p>
+        <p class="text-sm text-sky-600 mt-2">Manage orgs &rarr;</p>
+    </a>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <p class="text-xs text-gray-500 uppercase tracking-wide">System</p>
+        <p class="text-sm font-medium text-gray-900 mt-2">Supabase backend</p>
+        <p class="text-xs text-green-600 mt-1">Connected</p>
+    </div>
+</div>
+{% endblock %}

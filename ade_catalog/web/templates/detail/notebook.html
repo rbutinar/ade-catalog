@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.notebook_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.notebook_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="flex items-start justify-between mb-6">
+    <div>
+        <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-bold text-gray-900">{{ obj.notebook_name }}</h1>
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
+                Databricks
+            </span>
+            {% if obj.layer %}
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                  {% if obj.layer == 'bronze' %}bg-amber-100 text-amber-800
+                  {% elif obj.layer == 'silver' %}bg-gray-100 text-gray-800
+                  {% elif obj.layer == 'gold' %}bg-yellow-100 text-yellow-800
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ obj.layer }}
+            </span>
+            {% endif %}
+        </div>
+        <p class="mt-1 text-sm text-gray-500 font-mono">{{ obj.notebook_path }}</p>
+    </div>
+</div>
+
+<!-- Metadata grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Language</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.notebook_language or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Purpose</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 capitalize">{{ obj.purpose or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Workspace</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 truncate">{{ obj.workspace_name }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Parent Job</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.job_name or '—' }}</p>
+    </div>
+</div>
+
+<!-- Tables read / written -->
+<div class="grid md:grid-cols-2 gap-6">
+    <!-- Tables read -->
+    <div class="bg-white rounded-lg border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h2 class="text-base font-semibold text-gray-900">
+                Tables Read
+                <span class="text-sm font-normal text-gray-400">({{ reads|length }})</span>
+            </h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for t in reads %}
+            <div class="px-5 py-3">
+                <p class="text-sm font-medium text-gray-900">{{ t.table_name }}</p>
+                <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ t.full_table_name }}</p>
+            </div>
+            {% else %}
+            <div class="px-5 py-4 text-sm text-gray-400">No tables read</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tables written -->
+    <div class="bg-white rounded-lg border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h2 class="text-base font-semibold text-gray-900">
+                Tables Written
+                <span class="text-sm font-normal text-gray-400">({{ writes|length }})</span>
+            </h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for t in writes %}
+            <div class="px-5 py-3">
+                <p class="text-sm font-medium text-gray-900">{{ t.table_name }}</p>
+                <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ t.full_table_name }}</p>
+            </div>
+            {% else %}
+            <div class="px-5 py-4 text-sm text-gray-400">No tables written</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Timestamps -->
+<div class="mt-6 text-xs text-gray-400 flex gap-6">
+    {% if obj.created_at %}<span>Created: {{ obj.created_at }}</span>{% endif %}
+    {% if obj.last_modified_at %}<span>Modified: {{ obj.last_modified_at }}</span>{% endif %}
+</div>
+{% endblock %}

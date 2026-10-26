@@ -1,0 +1,35 @@
+{
+  "tables": [
+    {
+      "name": "dim_customer",
+      "schema": "dbo",
+      "type": "BASE TABLE",
+      "row_count": 500,
+      "columns": [
+        {"name": "customer_key", "data_type": "int", "is_nullable": false},
+        {"name": "customer_id", "data_type": "varchar", "max_length": 20, "is_nullable": false},
+        {"name": "customer_name", "data_type": "varchar", "max_length": 200, "is_nullable": true},
+        {"name": "segment", "data_type": "varchar", "max_length": 50, "is_nullable": true}
+      ]
+    },
+    {
+      "name": "fct_orders",
+      "schema": "dbo",
+      "type": "BASE TABLE",
+      "row_count": 12000,
+      "columns": [
+        {"name": "order_key", "data_type": "bigint", "is_nullable": false},
+        {"name": "customer_key", "data_type": "int", "is_nullable": false},
+        {"name": "order_date", "data_type": "date", "is_nullable": false},
+        {"name": "amount", "data_type": "decimal", "is_nullable": true}
+      ]
+    }
+  ],
+  "views": [
+    {
+      "name": "vw_sales_summary",
+      "schema": "dbo",
+      "definition": "SELECT c.segment, SUM(f.amount) AS total FROM dbo.fct_orders f JOIN dbo.dim_customer c ON f.customer_key = c.customer_key GROUP BY c.segment"
+    }
+  ]
+}

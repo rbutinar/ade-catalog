@@ -1,0 +1,33 @@
+{# One chat exchange, appended to #assistant-messages (HTMX beforeend).
+   Context: user_message, and either reply (+ optional tool_trail) or error. #}
+<div class="space-y-2">
+  {# User bubble (right) #}
+  {% if user_message %}
+  <div class="flex justify-end">
+    <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-sky-600 px-3.5 py-2 text-sm text-white whitespace-pre-line">
+      {{ user_message }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# Assistant bubble (left) #}
+  <div class="flex justify-start">
+    <div class="max-w-[90%] rounded-2xl rounded-bl-sm bg-gray-100 px-3.5 py-2 text-sm text-gray-800">
+      {% if error %}
+        <p class="text-rose-600 whitespace-pre-line">{{ error }}</p>
+      {% else %}
+        <div class="assistant-md space-y-1 leading-relaxed">{{ reply | assistant_md if reply else "…" }}</div>
+        {% if tool_trail %}
+        <div class="mt-2 flex flex-wrap gap-1 border-t border-gray-200 pt-2">
+          {% for t in tool_trail %}
+          <span class="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[11px] text-gray-500"
+                title="{{ t.input | tojson }}">
+            &#128295; {{ t.name }}{% if t.input.query %}(&ldquo;{{ t.input.query }}&rdquo;){% elif t.input.node_name %}(&ldquo;{{ t.input.node_name }}&rdquo;){% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+{
+  "tables": [
+    {
+      "name": "raw_orders",
+      "schema": "dbo",
+      "row_count": 12000,
+      "size_mb": 4.2,
+      "location": "Tables/raw_orders"
+    },
+    {
+      "name": "raw_customers",
+      "schema": "dbo",
+      "row_count": 500,
+      "size_mb": 0.3,
+      "location": "Tables/raw_customers"
+    }
+  ]
+}

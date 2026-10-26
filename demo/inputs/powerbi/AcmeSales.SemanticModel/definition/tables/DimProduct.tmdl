@@ -1,0 +1,102 @@
+/// Product dimension - Acme Manufacturing products from Databricks
+table DimProduct
+	lineageTag: dc54803d-a23c-4960-ab86-4e17bccff4c6
+
+	column product_id
+		dataType: string
+		lineageTag: e16694aa-8a1c-40bb-b8ee-1628e3c9bb16
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_name
+		dataType: string
+		lineageTag: eff057e3-d099-48c2-b550-fe753acea832
+		summarizeBy: none
+		sourceColumn: product_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: 648b2b24-a6f2-48a2-848c-e27983f86448
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column subcategory
+		dataType: string
+		lineageTag: 72f9f9c6-4693-41cb-901f-0019788dac82
+		summarizeBy: none
+		sourceColumn: subcategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_price
+		dataType: double
+		lineageTag: 6f7a2f9a-02c6-471f-b55e-0665350acf0e
+		summarizeBy: none
+		sourceColumn: unit_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column cost
+		dataType: double
+		lineageTag: a2b3c4d5-e6f7-8901-abcd-ef1234567810
+		summarizeBy: none
+		sourceColumn: cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column profit_margin
+		dataType: double
+		lineageTag: a2b3c4d5-e6f7-8901-abcd-ef1234567811
+		summarizeBy: none
+		sourceColumn: profit_margin
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column price_tier
+		dataType: string
+		lineageTag: a2b3c4d5-e6f7-8901-abcd-ef1234567812
+		summarizeBy: none
+		sourceColumn: price_tier
+
+		annotation SummarizationSetBy = Automatic
+
+	column supplier_id
+		dataType: string
+		lineageTag: a2b3c4d5-e6f7-8901-abcd-ef1234567813
+		summarizeBy: none
+		sourceColumn: supplier_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: boolean
+		lineageTag: a2b3c4d5-e6f7-8901-abcd-ef1234567814
+		summarizeBy: none
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimProduct = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs("dbc-da799c8c-f5df.cloud.databricks.com", "/sql/1.0/warehouses/98498de391bacdc0", [Catalog="workspace", Database="default"]),
+				    silver_products = Source{[Schema="default",Item="silver_products"]}[Data]
+				in
+				    silver_products
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

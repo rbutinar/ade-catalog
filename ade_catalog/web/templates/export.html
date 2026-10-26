@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Export · ade-catalog{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Export to Excel</h1>
+        <p class="mt-1 text-sm text-gray-500">
+            Generate a multi-sheet workbook for the current view
+            {% if view_name %}<span class="font-medium text-gray-700">— {{ view_name }}</span>{% endif %}.
+            Empty reports are skipped automatically.
+        </p>
+    </div>
+
+    <form method="get" action="{{ url_for('export.download') }}"
+          class="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <input type="hidden" name="view_id" value="{{ view_id }}">
+
+        <div class="divide-y divide-gray-100">
+            {% for r in reports %}
+            <label class="flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50">
+                <input type="checkbox" name="reports" value="{{ r.key }}" checked
+                       class="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                <span>
+                    <span class="block text-sm font-medium text-gray-900">{{ r.label }}</span>
+                    <span class="block text-xs text-gray-500">{{ r.desc }}</span>
+                </span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-5 py-3 rounded-b-lg">
+            <span class="text-xs text-gray-500">One sheet per selected report.</span>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white
+                           shadow-sm hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                Download .xlsx
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

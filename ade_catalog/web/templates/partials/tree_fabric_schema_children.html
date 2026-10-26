@@ -1,0 +1,42 @@
+<!-- Tables, views, procedures within a schema -->
+<div class="ml-4 border-l border-gray-300 pl-3 py-1 space-y-0.5">
+
+  {% if tables %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Tables</div>
+  {% for t in tables %}
+  <div class="flex items-center gap-1 text-sm px-1 py-0.5 text-gray-700">
+    <span class="w-4"></span>
+    <span class="text-gray-800">{{ t.table_name }}</span>
+    <span class="text-gray-500 text-xs ml-auto">
+      {{ t.column_count or 0 }} cols
+      {% if t.row_count is not none %} / {{ "{:,}".format(t.row_count) }} rows{% endif %}
+    </span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if views %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-2 mb-1">Views</div>
+  {% for v in views %}
+  <div class="flex items-center gap-1 text-sm px-1 py-0.5 text-gray-700">
+    <span class="w-4"></span>
+    <span class="text-blue-700">{{ v.view_name }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if procedures %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-2 mb-1">Procedures</div>
+  {% for p in procedures %}
+  <div class="flex items-center gap-1 text-sm px-1 py-0.5 text-gray-700">
+    <span class="w-4"></span>
+    <span class="text-purple-700">{{ p.procedure_name }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if not tables and not views and not procedures %}
+  <div class="text-sm text-gray-500 italic px-1">Empty schema</div>
+  {% endif %}
+
+</div>

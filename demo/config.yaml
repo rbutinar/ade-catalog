@@ -1,0 +1,51 @@
+# ade-catalog Demo Environment
+# Synthetic data for development and testing
+
+environment:
+  id: demo
+  name: "Demo Environment"
+  description: "Synthetic demo data for development and testing"
+  mcp_enabled: true
+  created_at: "2026-03-28"
+  type: demo
+  status: active
+
+database:
+  name: ade_catalog_demo
+
+storage:
+  extractions: extractions        # relative to demo/ root
+  business_docs: business_docs
+  exports: exports
+
+platforms:
+  databricks:
+    enabled: true
+    extraction_mode: local
+    local:
+      jobs_file: "extractions/databricks/jobs.json"
+      notebooks_file: "extractions/databricks/notebooks.json"
+      tables_file: "extractions/databricks/tables.json"
+
+  powerbi:
+    enabled: true
+    extraction_mode: local
+    local:
+      input_pattern: "inputs/powerbi/**/*.pbip"
+      datasets_file: "extractions/powerbi/datasets.json"
+
+lineage:
+  auto_build: true
+  cross_platform: true
+
+notes: |
+  Demo environment with synthetic data representing a fictional
+  e-commerce company. Safe to commit — no real client data.
+
+  Platforms: Databricks + Power BI
+  Workflows: Sales Analytics, Customer 360, Inventory Management
+
+tags:
+  - demo
+  - synthetic
+  - development

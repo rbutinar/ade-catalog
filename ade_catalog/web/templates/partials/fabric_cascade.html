@@ -1,0 +1,27 @@
+<!-- Fabric cascade: Warehouse/Lakehouse selector + Schema selector -->
+{% if warehouses or lakehouses %}
+<div class="flex-1 min-w-[160px]">
+    <label class="block text-xs text-gray-500 mb-1">Warehouse / Lakehouse</label>
+    <select name="filter_item" id="filter-item"
+            class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white"
+            hx-get="/catalog/filters/schemas"
+            hx-trigger="change"
+            hx-target="#fabric-schema-cascade"
+            hx-include="[name='filter_item']">
+        <option value="">All</option>
+        {% for wh in warehouses %}
+        <option value="wh:{{ wh.warehouse_id }}">{{ wh.warehouse_name }} (Warehouse)</option>
+        {% endfor %}
+        {% for lh in lakehouses %}
+        <option value="lh:{{ lh.lakehouse_id }}">{{ lh.lakehouse_name }} (Lakehouse)</option>
+        {% endfor %}
+    </select>
+</div>
+<div id="fabric-schema-cascade" class="flex-1 min-w-[140px]">
+    <!-- Schema dropdown loaded when item is selected -->
+</div>
+{% else %}
+<div class="flex-1 min-w-[160px]">
+    <p class="text-xs text-gray-400 py-2">No warehouses or lakehouses in this workspace</p>
+</div>
+{% endif %}

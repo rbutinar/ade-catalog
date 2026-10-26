@@ -1,0 +1,208 @@
+/// Sales fact table - Acme Manufacturing aggregated transactions from Databricks
+table FactSales
+	lineageTag: c46e71cd-d44c-4748-bc7a-87cdeeea410c
+
+	/// Sum of all sales revenue
+	measure 'Total Revenue' = SUM(FactSales[total_revenue])
+		formatString: $ #,##0.00
+		lineageTag: 36f454ce-e050-4d23-b571-bc621d5d0bde
+
+	/// Sum of all quantities sold
+	measure 'Total Quantity' = SUM(FactSales[total_quantity])
+		formatString: #,##0
+		lineageTag: 48de9858-0259-4b1b-99ff-f28a7bea65dc
+
+	/// Average revenue per transaction
+	measure 'Avg Order Value' = DIVIDE([Total Revenue], SUM(FactSales[transaction_count]), 0)
+		formatString: $ #,##0.00
+		lineageTag: aca93a84-43fb-4cea-bdaf-e90bbef4af41
+
+	/// Count of sales aggregation rows
+	measure 'Total Orders' = SUM(FactSales[transaction_count])
+		formatString: #,##0
+		lineageTag: 1a720ad8-ad90-473c-8e75-9af585546555
+
+	/// Year-to-date revenue
+	measure 'Revenue YTD' = TOTALYTD([Total Revenue], DimDate[Date])
+		formatString: $ #,##0.00
+		lineageTag: a3a884d2-d54f-4660-8891-36b1f2a40ed6
+
+	/// Revenue same period last year
+	measure 'Revenue LY' = CALCULATE([Total Revenue], SAMEPERIODLASTYEAR(DimDate[Date]))
+		formatString: $ #,##0.00
+		lineageTag: d720b0b7-77b7-4f67-a6b6-d4d923ea0b6e
+
+	/// Revenue variance vs last year
+	measure 'Revenue vs LY' = [Total Revenue] - [Revenue LY]
+		formatString: $ #,##0.00
+		lineageTag: f04a784c-dffb-4194-a752-b8aa5e449873
+
+	/// Revenue growth percentage vs last year
+	measure 'Revenue Growth %' = DIVIDE([Revenue vs LY], [Revenue LY], 0)
+		formatString: 0.0%
+		lineageTag: e5b11e24-8385-463c-bc03-a98225257527
+
+	/// Count of unique customers
+	measure 'Active Customers' = DISTINCTCOUNT(FactSales[customer_id])
+		formatString: #,##0
+		lineageTag: 03495a67-a880-44a4-a427-688f423c1549
+
+	/// Average revenue per customer
+	measure 'Revenue per Customer' = DIVIDE([Total Revenue], [Active Customers], 0)
+		formatString: $ #,##0.00
+		lineageTag: b7a7b097-00a1-4a37-9f7c-5e9898ebc535
+
+	/// Count of unique products sold
+	measure 'Products Sold' = DISTINCTCOUNT(FactSales[product_id])
+		formatString: #,##0
+		lineageTag: c65baefd-ccf6-404a-9a4e-834207d1a5d8
+
+	/// Average quantity per transaction
+	measure 'Avg Quantity per Order' = DIVIDE([Total Quantity], [Total Orders], 0)
+		formatString: #,##0.0
+		lineageTag: 6bf52cc5-d840-4ba4-b4dd-634b08cb62e8
+
+	/// Month-to-date revenue
+	measure 'Revenue MTD' = TOTALMTD([Total Revenue], DimDate[Date])
+		formatString: $ #,##0.00
+		lineageTag: 4c02fd88-bad3-4617-ab33-b4b8b3d97652
+
+	/// Quarter-to-date revenue
+	measure 'Revenue QTD' = TOTALQTD([Total Revenue], DimDate[Date])
+		formatString: $ #,##0.00
+		lineageTag: 5aae2e21-af03-4c7e-be95-43e6307a2352
+
+	column sale_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 9a64e445-84b4-45e2-a190-c9193486a77d
+		summarizeBy: none
+		sourceColumn: sale_date
+
+		variation Variation
+			isDefault
+			relationship: 187b7d71-738f-46b4-935c-d39f65b8a3c3
+			defaultHierarchy: LocalDateTable_6fafbd15-06d4-4569-948c-ff23df633439.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column product_id
+		dataType: string
+		lineageTag: 3fae7f88-ec78-410d-b96b-2b26ccd0d011
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: string
+		lineageTag: 81ac0d5e-20e1-472d-97ea-32f0df10f041
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column channel
+		dataType: string
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567801
+		summarizeBy: none
+		sourceColumn: channel
+
+		annotation SummarizationSetBy = Automatic
+
+	column region
+		dataType: string
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567802
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_quantity
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 67f1080f-bc9b-4c92-9afb-bd548e04dacc
+		summarizeBy: sum
+		sourceColumn: total_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_revenue
+		dataType: double
+		lineageTag: f088676f-88be-4a35-a301-5e527cd9d1dd
+		summarizeBy: sum
+		sourceColumn: total_revenue
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column transaction_count
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 0b0cfb73-bb40-49b5-89d6-7266518a907f
+		summarizeBy: sum
+		sourceColumn: transaction_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_unit_price
+		dataType: double
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567803
+		summarizeBy: none
+		sourceColumn: avg_unit_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column fiscal_year
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567804
+		summarizeBy: none
+		sourceColumn: fiscal_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column fiscal_quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567805
+		summarizeBy: none
+		sourceColumn: fiscal_quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column fiscal_month
+		dataType: int64
+		formatString: 0
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567806
+		summarizeBy: none
+		sourceColumn: fiscal_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column fact_key
+		dataType: string
+		lineageTag: a1b2c3d4-e5f6-7890-abcd-ef1234567807
+		summarizeBy: none
+		sourceColumn: fact_key
+		isHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactSales = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs("dbc-da799c8c-f5df.cloud.databricks.com", "/sql/1.0/warehouses/98498de391bacdc0", [Catalog="workspace", Database="default"]),
+				    gold_ft_sales = Source{[Schema="default",Item="gold_ft_sales"]}[Data]
+				in
+				    gold_ft_sales
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

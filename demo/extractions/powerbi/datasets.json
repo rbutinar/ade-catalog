@@ -1,0 +1,315 @@
+{
+  "extraction_date": "2024-12-07T10:00:00Z",
+  "total_datasets": 4,
+  "datasets": [
+    {
+      "dataset_id": "ds_001",
+      "name": "Sales Analytics",
+      "description": "Comprehensive sales analysis including trends, forecasts, and performance metrics",
+      "workflow": "sales_analytics",
+      "data_sources": [
+        {"type": "PostgreSQL", "table": "demo.fact_sales"},
+        {"type": "PostgreSQL", "table": "demo.dim_customer"},
+        {"type": "PostgreSQL", "table": "demo.dim_product"},
+        {"type": "PostgreSQL", "table": "demo.dim_region"}
+      ],
+      "tables": [
+        {"name": "FactSales", "source": "gold_ft_sales", "rows": 2500000},
+        {"name": "DimCustomer", "source": "dim_customer", "rows": 150000},
+        {"name": "DimProduct", "source": "gold_dm_product", "rows": 5000},
+        {"name": "DimRegion", "source": "dim_region", "rows": 50},
+        {"name": "DimDate", "source": "calculated", "rows": 3650}
+      ],
+      "relationships": [
+        {"from": "FactSales.customer_id", "to": "DimCustomer.customer_id", "cardinality": "many-to-one"},
+        {"from": "FactSales.product_id", "to": "DimProduct.product_id", "cardinality": "many-to-one"},
+        {"from": "FactSales.region_id", "to": "DimRegion.region_id", "cardinality": "many-to-one"},
+        {"from": "FactSales.sale_date", "to": "DimDate.Date", "cardinality": "many-to-one"}
+      ],
+      "measures": [
+        {
+          "name": "Total Revenue",
+          "expression": "SUM(FactSales[total_amount])",
+          "description": "Sum of all sales revenue",
+          "format": "Currency",
+          "category": "Revenue"
+        },
+        {
+          "name": "Total Quantity",
+          "expression": "SUM(FactSales[quantity])",
+          "description": "Total units sold",
+          "format": "Number",
+          "category": "Volume"
+        },
+        {
+          "name": "Average Order Value",
+          "expression": "DIVIDE([Total Revenue], DISTINCTCOUNT(FactSales[sale_id]))",
+          "description": "Average revenue per transaction",
+          "format": "Currency",
+          "category": "Revenue"
+        },
+        {
+          "name": "YoY Revenue Growth",
+          "expression": "DIVIDE([Total Revenue] - CALCULATE([Total Revenue], SAMEPERIODLASTYEAR(DimDate[Date])), CALCULATE([Total Revenue], SAMEPERIODLASTYEAR(DimDate[Date])))",
+          "description": "Year-over-year revenue growth percentage",
+          "format": "Percentage",
+          "category": "Growth"
+        },
+        {
+          "name": "Revenue MTD",
+          "expression": "TOTALMTD([Total Revenue], DimDate[Date])",
+          "description": "Month-to-date revenue",
+          "format": "Currency",
+          "category": "Revenue"
+        },
+        {
+          "name": "Revenue YTD",
+          "expression": "TOTALYTD([Total Revenue], DimDate[Date])",
+          "description": "Year-to-date revenue",
+          "format": "Currency",
+          "category": "Revenue"
+        },
+        {
+          "name": "Customer Count",
+          "expression": "DISTINCTCOUNT(FactSales[customer_id])",
+          "description": "Number of unique customers",
+          "format": "Number",
+          "category": "Customer"
+        },
+        {
+          "name": "Revenue per Customer",
+          "expression": "DIVIDE([Total Revenue], [Customer Count])",
+          "description": "Average revenue per customer",
+          "format": "Currency",
+          "category": "Customer"
+        }
+      ],
+      "created_date": "2024-01-20",
+      "modified_date": "2024-11-25"
+    },
+    {
+      "dataset_id": "ds_002",
+      "name": "Inventory Dashboard",
+      "description": "Real-time inventory monitoring with stock alerts and turnover analysis",
+      "workflow": "inventory_management",
+      "data_sources": [
+        {"type": "PostgreSQL", "table": "demo.fact_inventory"},
+        {"type": "PostgreSQL", "table": "demo.dim_product"},
+        {"type": "PostgreSQL", "table": "demo.dim_warehouse"}
+      ],
+      "tables": [
+        {"name": "FactInventory", "source": "fact_inventory", "rows": 500000},
+        {"name": "DimProduct", "source": "gold_dm_product", "rows": 5000},
+        {"name": "DimWarehouse", "source": "dim_warehouse", "rows": 25},
+        {"name": "DimDate", "source": "calculated", "rows": 3650}
+      ],
+      "relationships": [
+        {"from": "FactInventory.product_id", "to": "DimProduct.product_id", "cardinality": "many-to-one"},
+        {"from": "FactInventory.warehouse_id", "to": "DimWarehouse.warehouse_id", "cardinality": "many-to-one"},
+        {"from": "FactInventory.snapshot_date", "to": "DimDate.Date", "cardinality": "many-to-one"}
+      ],
+      "measures": [
+        {
+          "name": "Current Stock",
+          "expression": "CALCULATE(SUM(FactInventory[quantity_on_hand]), LASTDATE(DimDate[Date]))",
+          "description": "Current inventory quantity on hand",
+          "format": "Number",
+          "category": "Stock"
+        },
+        {
+          "name": "Available Stock",
+          "expression": "CALCULATE(SUM(FactInventory[quantity_available]), LASTDATE(DimDate[Date]))",
+          "description": "Current available inventory (excluding reserved)",
+          "format": "Number",
+          "category": "Stock"
+        },
+        {
+          "name": "Stock Value",
+          "expression": "SUMX(FactInventory, FactInventory[quantity_on_hand] * RELATED(DimProduct[unit_cost]))",
+          "description": "Total value of inventory at cost",
+          "format": "Currency",
+          "category": "Value"
+        },
+        {
+          "name": "Reorder Alert Count",
+          "expression": "COUNTROWS(FILTER(FactInventory, FactInventory[quantity_available] < FactInventory[reorder_point]))",
+          "description": "Number of products below reorder point",
+          "format": "Number",
+          "category": "Alerts"
+        },
+        {
+          "name": "Inventory Turnover",
+          "expression": "DIVIDE([Cost of Goods Sold], AVERAGE(FactInventory[quantity_on_hand]))",
+          "description": "Inventory turnover ratio",
+          "format": "Decimal",
+          "category": "Efficiency"
+        }
+      ],
+      "created_date": "2024-02-15",
+      "modified_date": "2024-11-20"
+    },
+    {
+      "dataset_id": "ds_003",
+      "name": "Customer 360 View",
+      "description": "Unified customer analytics with segmentation and lifetime value analysis",
+      "workflow": "customer_360",
+      "data_sources": [
+        {"type": "PostgreSQL", "table": "demo.dim_customer"},
+        {"type": "PostgreSQL", "table": "demo.fact_sales"},
+        {"type": "PostgreSQL", "table": "demo.dim_region"}
+      ],
+      "tables": [
+        {"name": "DimCustomer", "source": "dim_customer", "rows": 150000},
+        {"name": "FactSales", "source": "gold_ft_sales", "rows": 2500000},
+        {"name": "DimRegion", "source": "dim_region", "rows": 50},
+        {"name": "DimDate", "source": "calculated", "rows": 3650}
+      ],
+      "relationships": [
+        {"from": "FactSales.customer_id", "to": "DimCustomer.customer_id", "cardinality": "many-to-one"},
+        {"from": "DimCustomer.region_id", "to": "DimRegion.region_id", "cardinality": "many-to-one"},
+        {"from": "FactSales.sale_date", "to": "DimDate.Date", "cardinality": "many-to-one"}
+      ],
+      "measures": [
+        {
+          "name": "Total Customers",
+          "expression": "COUNTROWS(DimCustomer)",
+          "description": "Total number of customers in the database",
+          "format": "Number",
+          "category": "Customer"
+        },
+        {
+          "name": "Active Customers",
+          "expression": "CALCULATE(COUNTROWS(DimCustomer), DimCustomer[is_active] = TRUE)",
+          "description": "Number of active customers",
+          "format": "Number",
+          "category": "Customer"
+        },
+        {
+          "name": "Average LTV",
+          "expression": "AVERAGE(DimCustomer[lifetime_value])",
+          "description": "Average customer lifetime value",
+          "format": "Currency",
+          "category": "Value"
+        },
+        {
+          "name": "Customer Retention Rate",
+          "expression": "DIVIDE([Active Customers], [Total Customers])",
+          "description": "Percentage of customers still active",
+          "format": "Percentage",
+          "category": "Retention"
+        },
+        {
+          "name": "New Customers MTD",
+          "expression": "CALCULATE(COUNTROWS(DimCustomer), DATESMTD(DimCustomer[acquisition_date]))",
+          "description": "New customers acquired month-to-date",
+          "format": "Number",
+          "category": "Acquisition"
+        },
+        {
+          "name": "Customer Churn Rate",
+          "expression": "1 - [Customer Retention Rate]",
+          "description": "Percentage of customers who are no longer active",
+          "format": "Percentage",
+          "category": "Retention"
+        }
+      ],
+      "created_date": "2024-03-10",
+      "modified_date": "2024-11-22"
+    },
+    {
+      "dataset_id": "ds_004",
+      "name": "Marketing Performance",
+      "description": "Campaign performance tracking with ROI and attribution analysis",
+      "workflow": "marketing_campaigns",
+      "data_sources": [
+        {"type": "PostgreSQL", "table": "demo.fact_campaign_performance"},
+        {"type": "PostgreSQL", "table": "demo.dim_campaign"},
+        {"type": "PostgreSQL", "table": "demo.fact_sales"}
+      ],
+      "tables": [
+        {"name": "FactCampaignPerformance", "source": "fact_campaign_performance", "rows": 75000},
+        {"name": "DimCampaign", "source": "dim_campaign", "rows": 500},
+        {"name": "FactSales", "source": "gold_ft_sales", "rows": 2500000},
+        {"name": "DimDate", "source": "calculated", "rows": 3650}
+      ],
+      "relationships": [
+        {"from": "FactCampaignPerformance.campaign_id", "to": "DimCampaign.campaign_id", "cardinality": "many-to-one"},
+        {"from": "FactCampaignPerformance.performance_date", "to": "DimDate.Date", "cardinality": "many-to-one"}
+      ],
+      "measures": [
+        {
+          "name": "Total Spend",
+          "expression": "SUM(FactCampaignPerformance[spend])",
+          "description": "Total marketing spend",
+          "format": "Currency",
+          "category": "Spend"
+        },
+        {
+          "name": "Total Impressions",
+          "expression": "SUM(FactCampaignPerformance[impressions])",
+          "description": "Total ad impressions",
+          "format": "Number",
+          "category": "Reach"
+        },
+        {
+          "name": "Total Clicks",
+          "expression": "SUM(FactCampaignPerformance[clicks])",
+          "description": "Total ad clicks",
+          "format": "Number",
+          "category": "Engagement"
+        },
+        {
+          "name": "CTR",
+          "expression": "DIVIDE([Total Clicks], [Total Impressions])",
+          "description": "Click-through rate",
+          "format": "Percentage",
+          "category": "Engagement"
+        },
+        {
+          "name": "Total Conversions",
+          "expression": "SUM(FactCampaignPerformance[conversions])",
+          "description": "Total conversions from campaigns",
+          "format": "Number",
+          "category": "Conversion"
+        },
+        {
+          "name": "Conversion Rate",
+          "expression": "DIVIDE([Total Conversions], [Total Clicks])",
+          "description": "Click-to-conversion rate",
+          "format": "Percentage",
+          "category": "Conversion"
+        },
+        {
+          "name": "Cost per Click",
+          "expression": "DIVIDE([Total Spend], [Total Clicks])",
+          "description": "Average cost per click",
+          "format": "Currency",
+          "category": "Efficiency"
+        },
+        {
+          "name": "Cost per Acquisition",
+          "expression": "DIVIDE([Total Spend], [Total Conversions])",
+          "description": "Average cost per acquisition/conversion",
+          "format": "Currency",
+          "category": "Efficiency"
+        },
+        {
+          "name": "Campaign Revenue",
+          "expression": "SUM(FactCampaignPerformance[revenue])",
+          "description": "Revenue attributed to campaigns",
+          "format": "Currency",
+          "category": "Revenue"
+        },
+        {
+          "name": "ROAS",
+          "expression": "DIVIDE([Campaign Revenue], [Total Spend])",
+          "description": "Return on ad spend",
+          "format": "Decimal",
+          "category": "ROI"
+        }
+      ],
+      "created_date": "2024-06-05",
+      "modified_date": "2024-11-28"
+    }
+  ]
+}

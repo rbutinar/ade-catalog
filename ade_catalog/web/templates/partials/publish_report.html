@@ -1,0 +1,69 @@
+{% if error %}
+<div class="rounded-md bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-800">
+    <strong>Publish failed:</strong> {{ error }}
+</div>
+{% else %}
+<div class="rounded-lg border {{ 'border-emerald-300' if applied else 'border-slate-200' }} bg-white shadow-sm">
+    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-3
+                {{ 'bg-emerald-50' if applied else 'bg-slate-50' }} rounded-t-lg">
+        <span class="text-sm font-semibold {{ 'text-emerald-800' if applied else 'text-slate-700' }}">
+            {% if applied %}✓ Published to prod{% else %}Dry-run (nothing written){% endif %}
+            — {{ org.name }}
+        </span>
+        <span class="text-xs text-gray-500">{{ summary.total_rows }} rows</span>
+    </div>
+
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-2 px-5 py-4 text-sm">
+        <dt class="text-gray-500">Views</dt>
+        <dd class="text-gray-900">
+            {% for name, vid in summary.views.items() %}
+            <span class="inline-block mr-2">{{ name }}{% if vid %} → #{{ vid }}{% else %} (new){% endif %}</span>
+            {% endfor %}
+        </dd>
+        <dt class="text-gray-500">Lineage nodes</dt><dd class="text-gray-900">{{ summary.nodes }}</dd>
+        <dt class="text-gray-500">Lineage edges</dt><dd class="text-gray-900">{{ summary.edges }}</dd>
+        <dt class="text-gray-500">Enrichments</dt><dd class="text-gray-900">{{ summary.enrichment }}</dd>
+        {% if summary.platform_tables %}
+        <dt class="text-gray-500">Platform-meta</dt>
+        <dd class="text-gray-900">
+            {% for k, v in summary.platform_tables.items() %}<span class="mr-2">{{ k }}: {{ v }}</span>{% endfor %}
+        </dd>
+        {% endif %}
+    </dl>
+
+    {% if summary.benign_warnings %}
+    <p class="px-5 pb-2 text-xs text-gray-400">
+        {{ summary.benign_warnings }} benign notice(s) (absent platform-meta tables / view creation) — expected for a lineage-first org.
+    </p>
+    {% endif %}
+    {% if summary.real_warnings %}
+    <div class="mx-5 mb-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+        <strong>{{ summary.real_warnings|length }} warning(s):</strong>
+        <ul class="list-disc list-inside mt-1">
+            {% for w in summary.real_warnings[:20] %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if not applied %}
+    <div class="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-5 py-3 rounded-b-lg">
+        <span class="text-xs text-gray-500">Review the counts, then apply to write to production.</span>
+        <form hx-post="{{ url_for('publish.run') }}" hx-target="#publish-report" hx-indicator="#publish-spin"
+              hx-confirm="Publish '{{ org.name }}' to SHARED PRODUCTION Supabase? This writes client data to the {{ org.name }} org.">
+            <input type="hidden" name="org" value="{{ org.id }}">
+            <input type="hidden" name="apply" value="true">
+            <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white
+                           shadow-sm hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">
+                Apply — publish to prod
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <div class="border-t border-gray-100 bg-emerald-50 px-5 py-3 rounded-b-lg text-xs text-emerald-700">
+        Live on the hosted app now (Vercel reads the same DB). Next: provision org memberships so the
+        right people see it, then verify isolation with a real member.
+    </div>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,24 @@
+{# Scan completeness banner (TICK-021). Shown ONLY when the active view is a
+   deliberately/known-partial collection, so a partial graph reads as
+   partial-BY-CHOICE rather than incomplete/broken. The cause drives the colour:
+   amber = partial_by_design (intentional scope), rose = partial_incomplete
+   (access/failure limit, e.g. a PROD workspace we can only read as Viewer). #}
+{% if view_manifest and view_manifest.is_partial %}
+{% set by_design = view_manifest.completeness == 'partial_by_design' %}
+<div class="border-b {% if by_design %}bg-amber-50 border-amber-200{% else %}bg-rose-50 border-rose-200{% endif %}">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2 flex items-start gap-2 text-sm">
+    <span class="mt-0.5 shrink-0 {% if by_design %}text-amber-600{% else %}text-rose-600{% endif %}">
+      {% if by_design %}◑{% else %}⚠{% endif %}
+    </span>
+    <div class="{% if by_design %}text-amber-800{% else %}text-rose-800{% endif %}">
+      <span class="font-semibold">
+        {% if by_design %}Partial view — by design{% else %}Partial view — incomplete{% endif %}
+      </span>
+      {% if view_manifest.detail %}<span class="opacity-90">· {{ view_manifest.detail }}</span>{% endif %}
+      {% if view_manifest.perimeter_note %}
+      <div class="text-xs opacity-80 mt-0.5">{{ view_manifest.perimeter_note }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}

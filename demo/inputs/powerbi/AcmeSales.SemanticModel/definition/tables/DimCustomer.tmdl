@@ -1,0 +1,139 @@
+/// Customer dimension - Acme Manufacturing customers from Databricks gold layer
+table DimCustomer
+	lineageTag: bd92c488-9530-4a14-a24a-73f35ce57e02
+
+	/// Total number of customers in the dimension
+	measure 'Total Customers' = COUNTROWS(DimCustomer)
+		formatString: #,##0
+		lineageTag: d1a2b3c4-e5f6-7890-abcd-100000000001
+
+	/// Customers with active status
+	measure 'Active Customers' = CALCULATE(COUNTROWS(DimCustomer), DimCustomer[fl_is_active] = TRUE)
+		formatString: #,##0
+		lineageTag: d1a2b3c4-e5f6-7890-abcd-100000000002
+
+	/// Percentage of customers that are active
+	measure 'Customer Retention Rate' = DIVIDE([Active Customers], [Total Customers], 0)
+		formatString: 0.0%
+		lineageTag: d1a2b3c4-e5f6-7890-abcd-100000000003
+
+	/// Average customer lifetime value
+	measure 'Average LTV' = AVERAGE(DimCustomer[nr_lifetime_value])
+		formatString: $ #,##0.00
+		lineageTag: d1a2b3c4-e5f6-7890-abcd-100000000004
+
+	/// Revenue divided by active customers
+	measure 'Revenue per Customer' = DIVIDE([Total Revenue], [Active Customers], 0)
+		formatString: $ #,##0.00
+		lineageTag: d1a2b3c4-e5f6-7890-abcd-100000000005
+
+	column cd_customer
+		dataType: string
+		lineageTag: b39e539c-f534-471f-abc7-51554195fe93
+		summarizeBy: none
+		sourceColumn: cd_customer
+		isKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column tx_customer_name
+		dataType: string
+		lineageTag: 47af7499-2b1a-4557-9d56-e21a38425fd1
+		summarizeBy: none
+		sourceColumn: tx_customer_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column tx_email
+		dataType: string
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567830
+		summarizeBy: none
+		sourceColumn: tx_email
+		isHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column tx_segment
+		dataType: string
+		lineageTag: 74249f7f-7e40-42c1-8836-7076d449b3e7
+		summarizeBy: none
+		sourceColumn: tx_segment
+
+		annotation SummarizationSetBy = Automatic
+
+	column tx_region
+		dataType: string
+		lineageTag: aefbe72b-b90d-424b-b58f-7b22e07dfd4d
+		summarizeBy: none
+		sourceColumn: tx_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column tx_city
+		dataType: string
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567831
+		summarizeBy: none
+		sourceColumn: tx_city
+
+		annotation SummarizationSetBy = Automatic
+
+	column dt_acquisition_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567822
+		summarizeBy: none
+		sourceColumn: dt_acquisition_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column fl_is_active
+		dataType: boolean
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567821
+		summarizeBy: none
+		sourceColumn: fl_is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column nr_lifetime_value
+		dataType: double
+		formatString: $ #,##0.00
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567820
+		summarizeBy: none
+		sourceColumn: nr_lifetime_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column nr_total_orders
+		dataType: int64
+		formatString: #,##0
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567832
+		summarizeBy: sum
+		sourceColumn: nr_total_orders
+
+		annotation SummarizationSetBy = Automatic
+
+	column nr_total_revenue
+		dataType: double
+		formatString: $ #,##0.00
+		lineageTag: a3c4d5e6-f789-0123-abcd-ef1234567833
+		summarizeBy: sum
+		sourceColumn: nr_total_revenue
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition DimCustomer = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs("dbc-da799c8c-f5df.cloud.databricks.com", "/sql/1.0/warehouses/98498de391bacdc0", [Catalog="workspace", Database="default"]),
+				    gold_dm_customer = Source{[Schema="default",Item="gold_dm_customer"]}[Data]
+				in
+				    gold_dm_customer
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

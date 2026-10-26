@@ -1,0 +1,28 @@
+{% if datasets|length > 0 %}
+<div class="border-l border-gray-200 ml-2">
+    {% for ds in datasets %}
+    <div class="tree-node">
+        <button class="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-sky-50 transition-colors text-sm group"
+                hx-get="/catalog/tree/dataset/{{ ds.dataset_id }}"
+                hx-target="#ds-children-{{ ds.dataset_id }}"
+                hx-swap="innerHTML"
+                onclick="this.querySelector('.tree-arrow').classList.toggle('rotate-90')">
+            <svg class="tree-arrow w-3 h-3 text-gray-400 transition-transform duration-200 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+            </svg>
+            <svg class="w-3.5 h-3.5 text-gray-300 group-hover:text-sky-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+            </svg>
+            <span class="truncate text-gray-700 group-hover:text-sky-700">{{ ds.dataset_name }}</span>
+            <span class="ml-auto text-xs text-gray-400 flex-shrink-0">
+                {{ ds.table_count }}T &middot; {{ ds.measure_count }}M
+            </span>
+        </button>
+        <div id="ds-children-{{ ds.dataset_id }}" class="pl-4"></div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="px-4 py-2 text-xs text-gray-400 italic">No datasets</p>
+{% endif %}

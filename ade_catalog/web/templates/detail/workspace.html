@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.workspace_name }} · Workspace{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h1 class="text-2xl font-bold text-gray-900">{{ obj.workspace_name }}</h1>
+    <span class="inline-flex items-center rounded-full bg-slate-200 text-slate-700 px-2.5 py-0.5 text-xs font-medium">Workspace</span>
+    <span class="inline-flex items-center rounded-full bg-teal-100 text-teal-700 px-2.5 py-0.5 text-xs font-medium">fabric</span>
+    {% if obj.capacity_region %}<span class="text-xs text-gray-400">{{ obj.capacity_region }}</span>{% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  {% for label, items in [('Lakehouses', lakehouses), ('Warehouses', warehouses), ('Pipelines', pipelines), ('Notebooks', notebooks)] %}
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <div class="text-xs uppercase tracking-wide text-gray-400">{{ label }}</div>
+    <div class="text-2xl font-semibold text-gray-900">{{ items|length }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% macro item_list(title, items, route, id_key, name_key, extra=None) %}
+{% if items %}
+<div class="bg-white rounded-lg border border-gray-200 mb-4">
+  <div class="px-5 py-3 border-b border-gray-200"><h2 class="text-base font-semibold text-gray-900">{{ title }} <span class="text-sm font-normal text-gray-400">· {{ items|length }}</span></h2></div>
+  <ul class="divide-y divide-gray-100">
+    {% for it in items %}
+    <li class="px-5 py-2.5 flex items-center justify-between">
+      <a href="/detail/{{ route }}/{{ it[id_key] }}" class="text-sm text-gray-800 hover:text-sky-600 truncate">{{ it[name_key] }}</a>
+      {% if extra and it[extra] is not none %}<span class="text-xs text-gray-400">{{ it[extra] }} activities</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endmacro %}
+
+{{ item_list('Lakehouses', lakehouses, 'lakehouse', 'lakehouse_id', 'lakehouse_name') }}
+{{ item_list('Warehouses', warehouses, 'warehouse', 'warehouse_id', 'warehouse_name') }}
+{{ item_list('Pipelines', pipelines, 'pipeline', 'pipeline_id', 'pipeline_name', 'activity_count') }}
+{{ item_list('Notebooks', notebooks, 'fab_notebook', 'notebook_id', 'notebook_name') }}
+{% endblock %}

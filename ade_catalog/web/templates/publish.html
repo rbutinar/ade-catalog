@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Publish · ade-catalog{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Publish to shared prod</h1>
+        <p class="mt-1 text-sm text-gray-500">
+            Push a local organization's catalog into the shared production Supabase, scoped to that org.
+            Members of the org then see it on the hosted app via RLS. This is a local-operator admin tool
+            (super-admin / <code>postgres</code>); a restricted-user publish is a separate future concern.
+        </p>
+        <p class="mt-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+            Always <strong>dry-run first</strong>. Apply writes to production. Large orgs take minutes
+            (one row per round-trip) — for very large publishes prefer
+            <code>scripts/publish_org_to_prod.py&nbsp;--org&nbsp;&lt;slug&gt;&nbsp;--apply</code>.
+        </p>
+    </div>
+
+    <form hx-post="{{ url_for('publish.run') }}" hx-target="#publish-report" hx-indicator="#publish-spin"
+          class="rounded-lg border border-gray-200 bg-white shadow-sm p-5">
+        <label for="org" class="block text-sm font-medium text-gray-900">Local organization</label>
+        <div class="mt-2 flex items-center gap-3">
+            <select id="org" name="org"
+                    class="rounded-md border-gray-300 text-sm focus:border-sky-500 focus:ring-sky-500">
+                {% for o in orgs %}
+                <option value="{{ o.id }}">{{ o.name }} ({{ o.database or o.id }})</option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="apply" value="false">
+            <button type="submit"
+                    class="inline-flex items-center gap-2 rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white
+                           shadow-sm hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                Dry-run
+            </button>
+            <span id="publish-spin" class="htmx-indicator text-xs text-gray-500">running…</span>
+        </div>
+        {% if not orgs %}
+        <p class="mt-3 text-xs text-rose-600">No local organizations configured (CATALOG_LOCAL_ORGS).</p>
+        {% endif %}
+    </form>
+
+    <div id="publish-report" class="mt-6"></div>
+</div>
+{% endblock %}

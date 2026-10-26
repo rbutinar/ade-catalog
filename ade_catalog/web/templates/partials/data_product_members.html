@@ -1,0 +1,23 @@
+{% set TYPE_CHIP = {
+  'report':'bg-indigo-100 text-indigo-700','dataset':'bg-amber-100 text-amber-700',
+  'semantic_table':'bg-sky-100 text-sky-700','table':'bg-sky-100 text-sky-700','view':'bg-sky-100 text-sky-700',
+  'notebook':'bg-orange-100 text-orange-700','warehouse':'bg-blue-100 text-blue-700','lakehouse':'bg-emerald-100 text-emerald-700'
+} %}
+{% if members %}
+<ul class="divide-y divide-gray-100">
+  {% for m in members %}
+  <li class="flex items-center justify-between px-5 py-2.5">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ TYPE_CHIP.get(m.node_type, 'bg-gray-100 text-gray-600') }}">{{ m.node_type }}</span>
+      <a href="/detail/node/{{ m.node_id }}" class="text-sm text-gray-800 hover:text-sky-600 truncate">{{ m.display_name }}</a>
+      <span class="text-xs text-gray-400">{{ m.platform }}</span>
+      {% if m.via == 'ai_suggested' %}<span class="text-xs text-violet-500" title="AI-suggested member">&#10024;</span>{% endif %}
+    </div>
+    <button hx-post="/data-product/{{ dp_id }}/remove/{{ m.node_id }}" hx-target="#dp-members" hx-swap="innerHTML"
+            class="text-xs text-gray-400 hover:text-red-600" title="Remove from product">&times; remove</button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="px-5 py-4 text-sm text-gray-400">No members yet. Search above to add assets.</p>
+{% endif %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Architecture - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Architecture</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Architecture</h1>
+
+    <div class="space-y-8">
+
+        <!-- System Overview -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">System Overview</h2>
+            <div class="bg-gray-50 rounded p-4 text-sm font-mono text-gray-700 leading-relaxed">
+                <pre class="whitespace-pre overflow-x-auto">
+┌─────────────────────────────────────────────────────┐
+│                   SOURCES                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│  │ Fabric   │  │Databricks│  │ Power BI │          │
+│  │ REST API │  │   SDK    │  │  PBIP    │          │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘          │
+└───────┼──────────────┼─────────────┼────────────────┘
+        │              │             │
+        ▼              ▼             ▼
+┌─────────────────────────────────────────────────────┐
+│              EXTRACTION LAYER                       │
+│  JSON files per workspace/platform                  │
+│  Stored in: Supabase Storage (org-scoped)           │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              INGESTION LAYER                        │
+│  JSON → PostgreSQL (Supabase) or SQL Server         │
+│  Full-refresh per view                              │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              CATALOG DATABASE                       │
+│                                                     │
+│  ┌───────────┐ ┌───────────┐ ┌───────────┐         │
+│  │ databricks│ │  powerbi  │ │  fabric   │         │
+│  │   _meta   │ │   _meta   │ │  _infra   │         │
+│  └───────────┘ └───────────┘ ├───────────┤         │
+│                              │ warehouse │         │
+│  ┌───────────┐ ┌───────────┐│   _meta   │         │
+│  │  catalog  │ │  lineage  │├───────────┤         │
+│  │   _meta   │ │   _meta   ││ lakehouse │         │
+│  └───────────┘ └───────────┘│   _meta   │         │
+│                              └───────────┘         │
+│  Backend: Supabase PostgreSQL (default)             │
+│           SQL Server (on-prem option)               │
+└───────────────────────┬─────────────────────────────┘
+                        │
+              ┌─────────┼─────────┐
+              ▼                   ▼
+┌──────────────────┐  ┌──────────────────┐
+│    WEB UI        │  │   MCP SERVER     │
+│  Flask + HTMX    │  │  JSON-RPC /mcp   │
+│  Tailwind CSS    │  │                  │
+│                  │  │  5 tools:        │
+│  - Dashboard     │  │  - search        │
+│  - Catalog       │  │  - detail        │
+│  - Detail pages  │  │  - platforms     │
+│  - Admin console │  │  - stats         │
+│  - Documentation │  │  - lineage       │
+└──────────────────┘  └──────────────────┘
+        │                      │
+        └──────────┬───────────┘
+                   ▼
+          Vercel (Serverless)
+          https://ade-catalog.vercel.app</pre>
+            </div>
+        </section>
+
+        <!-- Database Backends -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Database Backends</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                ade-catalog supports two database backends, switchable via the
+                <code class="text-xs bg-gray-100 px-1 rounded">CATALOG_DB_BACKEND</code> environment variable.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="border border-teal-200 bg-teal-50 rounded p-4">
+                    <h3 class="text-sm font-semibold text-teal-900">Supabase (default)</h3>
+                    <ul class="text-sm text-teal-800 mt-2 space-y-1">
+                        <li>PostgreSQL managed by Supabase</li>
+                        <li>Built-in auth (email, SSO)</li>
+                        <li>Object storage for files</li>
+                        <li>Cloud-native, zero maintenance</li>
+                        <li>Multi-tenant with RLS</li>
+                    </ul>
+                </div>
+                <div class="border border-gray-200 bg-gray-50 rounded p-4">
+                    <h3 class="text-sm font-semibold text-gray-900">SQL Server (on-prem)</h3>
+                    <ul class="text-sm text-gray-700 mt-2 space-y-1">
+                        <li>Self-hosted SQL Server</li>
+                        <li>No auth layer (open access)</li>
+                        <li>Local file storage</li>
+                        <li>Full control, enterprise networks</li>
+                        <li>View-based isolation</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-3">
+                All queries are written in PostgreSQL dialect and automatically translated to T-SQL when using SQL Server backend.
+            </p>
+        </section>
+
+        <!-- Multi-tenancy -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Multi-tenancy</h2>
+            <div class="bg-gray-50 rounded p-4 text-sm font-mono text-gray-700 leading-relaxed">
+                <pre class="whitespace-pre overflow-x-auto">
+Organization (auth_meta.organizations)
+├── Users (auth_meta.user_org_memberships)
+│   ├── owner — full access + admin
+│   ├── admin — manage users in org
+│   ├── editor — edit metadata
+│   └── viewer — read only
+│
+├── Views (catalog_meta.catalog_views)
+│   ├── "Client Fabric" (view_id=7)
+│   ├── "Client Power BI" (view_id=8)
+│   └── "Production Scan" (view_id=9)
+│
+└── Storage (Supabase Storage)
+    └── {org_id}/
+        ├── extractions/fabric/...
+        ├── extractions/databricks/...
+        └── exports/...</pre>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Tech Stack</h2>
+            <table class="min-w-full text-sm">
+                <tbody class="divide-y divide-gray-100">
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Web Framework</td><td class="py-2 text-gray-600">Flask + Jinja2 + HTMX</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">CSS</td><td class="py-2 text-gray-600">Tailwind CSS (CDN)</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Database</td><td class="py-2 text-gray-600">Supabase PostgreSQL / SQL Server</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Auth</td><td class="py-2 text-gray-600">Supabase Auth (JWT)</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Storage</td><td class="py-2 text-gray-600">Supabase Storage (S3-compatible)</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Hosting</td><td class="py-2 text-gray-600">Vercel (Serverless Python)</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">API</td><td class="py-2 text-gray-600">MCP (Model Context Protocol)</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Code</td><td class="py-2 text-gray-600">Python 3.12+</td></tr>
+                    <tr><td class="py-2 pr-4 font-medium text-gray-900">Repo</td><td class="py-2 text-gray-600">GitHub (private)</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

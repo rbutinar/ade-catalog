@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Using the Catalog - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Using the Catalog</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Using the Catalog</h1>
+
+    <div class="space-y-8">
+
+        <!-- Dashboard -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Dashboard</h2>
+            <p class="text-sm text-gray-700">
+                The <a href="/" class="text-sky-600 hover:underline">Dashboard</a> gives you an overview of your catalog:
+                total objects by platform, notebooks by layer, and measures by dataset.
+            </p>
+        </section>
+
+        <!-- Views -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Switching Views</h2>
+            <p class="text-sm text-gray-700">
+                Use the <strong>View selector</strong> in the top-right corner of the navigation bar to switch
+                between different catalog views. Each view represents a scan or snapshot of one or more platforms.
+            </p>
+            <p class="text-sm text-gray-500 mt-2">
+                Example: you might have a "Production Fabric" view and a "Dev Databricks" view, each with different data.
+            </p>
+        </section>
+
+        <!-- Searching -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Searching</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                Go to <a href="/catalog" class="text-sky-600 hover:underline">Catalog</a> and type in the search bar.
+                Search is instant (HTMX) and matches object names, paths, and descriptions.
+            </p>
+            <div class="bg-gray-50 rounded p-4 space-y-2">
+                <p class="text-sm text-gray-700"><strong>Tips:</strong></p>
+                <ul class="text-sm text-gray-600 space-y-1 ml-4 list-disc">
+                    <li>Leave the search empty to browse all objects</li>
+                    <li>Use the <strong>Platform</strong> dropdown to filter by Databricks, Power BI, or Fabric</li>
+                    <li>Use the <strong>Type</strong> dropdown to filter by notebooks, tables, measures, pipelines, etc.</li>
+                    <li>Search matches partial names — "sales" finds "FactSales", "sales_pipeline", etc.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Browsing the tree -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Browsing the Tree</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                The catalog page also shows a <strong>hierarchical tree</strong> on the left:
+            </p>
+            <ul class="text-sm text-gray-600 space-y-2 ml-4 list-disc">
+                <li><strong>Databricks:</strong> Workspace &rarr; Notebooks (click to expand)</li>
+                <li><strong>Power BI:</strong> Report &rarr; Dataset &rarr; Tables &amp; Measures</li>
+                <li><strong>Fabric:</strong> Workspace &rarr; Warehouses/Lakehouses &rarr; Schemas &rarr; Tables</li>
+            </ul>
+            <p class="text-sm text-gray-500 mt-2">
+                Click on any node to expand it and see its children. Click on a leaf object to view its details.
+            </p>
+        </section>
+
+        <!-- Detail pages -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Object Details</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                Click on any object name (in search results or tree) to see its full detail page. Depending on the type:
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Notebook</p>
+                    <p class="text-xs text-gray-500">Path, language, layer, tables read/written</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Dataset</p>
+                    <p class="text-xs text-gray-500">Connection mode, tables, measures, relationships</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Measure</p>
+                    <p class="text-xs text-gray-500">DAX expression, complexity, format string</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Table (PBI / Warehouse / Lakehouse)</p>
+                    <p class="text-xs text-gray-500">Columns with data types, row count, source</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Pipeline</p>
+                    <p class="text-xs text-gray-500">Activities, types, source/sink, nesting</p>
+                </div>
+                <div class="border border-gray-100 rounded p-3">
+                    <p class="text-sm font-medium text-gray-900">Warehouse / Lakehouse</p>
+                    <p class="text-xs text-gray-500">SQL endpoint, workspace, schema browser</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

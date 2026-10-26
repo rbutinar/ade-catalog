@@ -1,0 +1,30 @@
+<!-- Pipeline activities -->
+<div class="ml-4 border-l border-gray-300 pl-3 py-1 space-y-0.5">
+
+  {% for a in activities %}
+  <div class="flex items-center gap-1 text-sm px-1 py-0.5 text-gray-700"
+       {% if a.nesting_level > 0 %}style="margin-left: {{ a.nesting_level * 16 }}px"{% endif %}>
+    <span class="w-4"></span>
+    {% if a.category == 'orchestration' %}
+    <span class="inline-block w-2 h-2 rounded-full bg-orange-500" title="Orchestration"></span>
+    {% elif a.category == 'notebook' %}
+    <span class="inline-block w-2 h-2 rounded-full bg-yellow-500" title="Notebook"></span>
+    {% elif a.category == 'data_movement' %}
+    <span class="inline-block w-2 h-2 rounded-full bg-cyan-500" title="Data Movement"></span>
+    {% elif a.category == 'control' %}
+    <span class="inline-block w-2 h-2 rounded-full bg-gray-400" title="Control"></span>
+    {% elif a.category == 'notification' %}
+    <span class="inline-block w-2 h-2 rounded-full bg-pink-500" title="Notification"></span>
+    {% else %}
+    <span class="inline-block w-2 h-2 rounded-full bg-gray-400" title="{{ a.category }}"></span>
+    {% endif %}
+    <span class="text-gray-800">{{ a.activity_name }}</span>
+    <span class="text-gray-500 text-xs ml-auto">{{ a.activity_type }}</span>
+  </div>
+  {% endfor %}
+
+  {% if not activities %}
+  <div class="text-sm text-gray-500 italic px-1">No activities</div>
+  {% endif %}
+
+</div>

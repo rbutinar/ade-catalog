@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - ade-catalog{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="mt-1 text-sm text-gray-500">Metadata overview</p>
+</div>
+
+<!-- Primary stats — show what's available -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    {% if stats.fabric_workspaces is defined and stats.fabric_workspaces %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Workspaces</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_workspaces }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.fabric_pipelines is defined and stats.fabric_pipelines %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Pipelines</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_pipelines }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.fabric_activities is defined and stats.fabric_activities %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Activities</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_activities }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.fabric_lakehouses is defined and stats.fabric_lakehouses %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Lakehouses</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_lakehouses }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.fabric_warehouses is defined and stats.fabric_warehouses %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Warehouses</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_warehouses }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.fabric_notebooks is defined and stats.fabric_notebooks %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Notebooks</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.fabric_notebooks }}</p>
+        <p class="mt-1 text-xs text-teal-600">Fabric</p>
+    </div>
+    {% endif %}
+    {% if stats.notebooks is defined and stats.notebooks %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Notebooks</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.notebooks }}</p>
+        <p class="mt-1 text-xs text-orange-600">Databricks</p>
+    </div>
+    {% endif %}
+    {% if stats.jobs is defined and stats.jobs %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Jobs</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.jobs }}</p>
+        <p class="mt-1 text-xs text-orange-600">Databricks</p>
+    </div>
+    {% endif %}
+    {% if stats.datasets is defined and stats.datasets %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Datasets</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.datasets }}</p>
+        <p class="mt-1 text-xs text-amber-600">Power BI</p>
+    </div>
+    {% endif %}
+    {% if stats.measures is defined and stats.measures %}
+    <div class="bg-white rounded-lg border border-gray-200 p-5">
+        <p class="text-sm font-medium text-gray-500">Measures</p>
+        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.measures }}</p>
+        <p class="mt-1 text-xs text-amber-600">Power BI</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Breakdowns (only shown if data exists) -->
+{% if notebooks_by_layer or measures_by_dataset %}
+<div class="grid md:grid-cols-2 gap-8 mb-8">
+    {% if notebooks_by_layer %}
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">Notebooks by Layer</h2>
+        <div class="space-y-3">
+            {% for item in notebooks_by_layer %}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    {% if item.layer == 'bronze' %}
+                    <span class="inline-block w-3 h-3 rounded-full bg-amber-700"></span>
+                    {% elif item.layer == 'silver' %}
+                    <span class="inline-block w-3 h-3 rounded-full bg-gray-400"></span>
+                    {% elif item.layer == 'gold' %}
+                    <span class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>
+                    {% else %}
+                    <span class="inline-block w-3 h-3 rounded-full bg-slate-300"></span>
+                    {% endif %}
+                    <span class="text-sm text-gray-700 capitalize">{{ item.layer }}</span>
+                </div>
+                <span class="text-sm font-medium text-gray-900">{{ item.cnt }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if measures_by_dataset %}
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">Measures by Dataset</h2>
+        <div class="space-y-3">
+            {% for item in measures_by_dataset %}
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700 truncate mr-4">{{ item.dataset_name }}</span>
+                <span class="text-sm font-medium text-gray-900">{{ item.cnt }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Secondary stats -->
+{% set secondary = [] %}
+{% if stats.workspaces is defined and stats.workspaces %}{% set _ = secondary.append(('Dbx Workspaces', stats.workspaces)) %}{% endif %}
+{% if stats.table_access is defined and stats.table_access %}{% set _ = secondary.append(('Table Access', stats.table_access)) %}{% endif %}
+{% if stats.reports is defined and stats.reports %}{% set _ = secondary.append(('Reports', stats.reports)) %}{% endif %}
+{% if stats.pbi_tables is defined and stats.pbi_tables %}{% set _ = secondary.append(('PBI Tables', stats.pbi_tables)) %}{% endif %}
+{% if stats.relationships is defined and stats.relationships %}{% set _ = secondary.append(('Relationships', stats.relationships)) %}{% endif %}
+{% if stats.fabric_lakehouse_tables is defined and stats.fabric_lakehouse_tables %}{% set _ = secondary.append(('Lakehouse Tables', stats.fabric_lakehouse_tables)) %}{% endif %}
+{% if stats.fabric_warehouse_tables is defined and stats.fabric_warehouse_tables %}{% set _ = secondary.append(('Warehouse Tables', stats.fabric_warehouse_tables)) %}{% endif %}
+
+{% if secondary %}
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    {% for label, value in secondary %}
+    <div class="bg-white rounded-lg border border-gray-200 p-4 text-center">
+        <p class="text-2xl font-semibold text-gray-900">{{ value }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ label }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not stats %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-sm text-gray-500">No data in this view. Select a different view or run an ingestion.</p>
+</div>
+{% endif %}
+{% endblock %}

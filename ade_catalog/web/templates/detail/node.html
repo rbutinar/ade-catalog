@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.display_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.display_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.display_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              {% if obj.platform == 'fabric' %}bg-teal-100 text-teal-700
+              {% elif obj.platform == 'databricks' %}bg-orange-100 text-orange-700
+              {% elif obj.platform == 'powerbi' %}bg-amber-100 text-amber-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ obj.platform }}
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+            {{ obj.node_type }}
+        </span>
+    </div>
+    {% if obj.qualified_name or obj.external_id %}
+    <p class="mt-1 text-sm text-gray-500 font-mono break-all">{{ obj.qualified_name or obj.external_id }}</p>
+    {% endif %}
+</div>
+
+<!-- Attributes -->
+<div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Attributes</h2>
+    </div>
+    {% if typed %}
+    <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for a in typed %}
+        <div {% if a.type == 'code' %}class="md:col-span-2"{% endif %}>
+            <p class="text-xs text-gray-500">{{ a.label }}</p>
+            {% if a.type == 'url' %}
+            <a href="{{ a.value }}" target="_blank" rel="noopener"
+               class="text-sm text-sky-600 hover:underline break-all">{{ a.value }}</a>
+            {% elif a.type == 'code' %}
+            <pre class="text-sm font-mono text-gray-800 bg-gray-50 rounded-md p-4 mt-1 overflow-x-auto whitespace-pre-wrap">{{ a.value }}</pre>
+            {% else %}
+            <p class="text-sm font-medium text-gray-900 break-words">{{ a.value }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="px-5 py-4 text-sm text-gray-400">No curated attributes for this type.</p>
+    {% endif %}
+
+    {% if extras %}
+    <details class="px-5 pb-5">
+        <summary class="text-xs text-gray-500 cursor-pointer select-none">Other properties ({{ extras|length }})</summary>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            {% for k, v in extras %}
+            <div>
+                <p class="text-xs text-gray-500 font-mono">{{ k }}</p>
+                <p class="text-sm text-gray-800 break-words">{{ v }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+</div>
+
+<!-- Connections -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+    <div class="bg-white rounded-lg border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h2 class="text-base font-semibold text-gray-900">Upstream
+                <span class="text-sm font-normal text-gray-400">({{ upstream|length }})</span>
+            </h2>
+        </div>
+        <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+            {% for u in upstream %}
+            <a href="/detail/node/{{ u.id }}" class="flex items-center gap-2 px-5 py-2.5 hover:bg-sky-50 group">
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">{{ u.type }}</span>
+                <span class="text-sm text-gray-900 truncate flex-1 group-hover:text-sky-700">{{ u.name }}</span>
+                {% if u.rel %}<span class="text-xs text-gray-400">{{ u.rel }}</span>{% endif %}
+            </a>
+            {% else %}
+            <p class="px-5 py-4 text-sm text-gray-400">No upstream connections</p>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h2 class="text-base font-semibold text-gray-900">Downstream
+                <span class="text-sm font-normal text-gray-400">({{ downstream|length }})</span>
+            </h2>
+        </div>
+        <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+            {% for d in downstream %}
+            <a href="/detail/node/{{ d.id }}" class="flex items-center gap-2 px-5 py-2.5 hover:bg-sky-50 group">
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">{{ d.type }}</span>
+                <span class="text-sm text-gray-900 truncate flex-1 group-hover:text-sky-700">{{ d.name }}</span>
+                {% if d.rel %}<span class="text-xs text-gray-400">{{ d.rel }}</span>{% endif %}
+            </a>
+            {% else %}
+            <p class="px-5 py-4 text-sm text-gray-400">No downstream connections</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

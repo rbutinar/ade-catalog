@@ -1,0 +1,13 @@
+<!-- Schema dropdown (loaded when container is selected) -->
+<label class="block text-xs text-gray-500 mb-1">Schema</label>
+<select name="filter_schema"
+        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white
+               focus:border-sky-500 focus:outline-none">
+    <option value="">All schemas</option>
+    {% for s in schemas %}
+    <option value="{{ s.schema_id }}">
+        {{ s.schema_name }}
+        {% if s.table_count is defined %}({{ s.table_count }} tables){% endif %}
+    </option>
+    {% endfor %}
+</select>

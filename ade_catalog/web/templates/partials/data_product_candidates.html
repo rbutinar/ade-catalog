@@ -1,0 +1,20 @@
+{% if candidates %}
+<div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
+  <div class="text-xs uppercase tracking-wide text-gray-400 mb-2">Add a member ({{ candidates|length }} match{{ '' if candidates|length == 1 else 'es' }})</div>
+  <ul class="space-y-1">
+    {% for c in candidates %}
+    <li class="flex items-center justify-between">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-xs">{{ c.node_type }}</span>
+        <span class="text-sm text-gray-700 truncate">{{ c.display_name }}</span>
+        <span class="text-xs text-gray-400">{{ c.platform }}</span>
+      </div>
+      <button hx-post="/data-product/{{ dp_id }}/add/{{ c.node_id }}" hx-target="#dp-members" hx-swap="innerHTML"
+              class="text-xs font-medium text-sky-600 hover:text-sky-700">+ add</button>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% elif q %}
+<div class="border-b border-gray-200 bg-gray-50 px-5 py-3 text-sm text-gray-400">No matching assets for “{{ q }}”.</div>
+{% endif %}

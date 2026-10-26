@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ade-catalog{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        [htmx-indicator] { opacity: 0; transition: opacity 200ms ease-in; }
+        .htmx-request [htmx-indicator] { opacity: 1; }
+        .htmx-request.htmx-indicator { opacity: 1; }
+        /* Mobile nav hamburger: hide the native <details> disclosure marker. */
+        nav summary { list-style: none; }
+        nav summary::-webkit-details-marker { display: none; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full">
+    {# Nav building blocks — shared by the desktop bar and the mobile hamburger
+       panel so the two never drift. Same-template macros, so they see request /
+       session / g / local_mode from the render context. #}
+    {% macro nav_links() %}
+        <a href="/"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if request.path == '/' %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Dashboard
+        </a>
+        <a href="/catalog"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/catalog' in request.path %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Catalog
+        </a>
+        <a href="/lineage/explore"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/lineage' in request.path %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Lineage
+        </a>
+        <a href="/export/"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/export' in request.path %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Export
+        </a>
+        <a href="/docs"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/docs' in request.path %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Docs
+        </a>
+        {% if local_mode %}
+        <a href="/publish/"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/publish' in request.path %}bg-slate-900 text-white{% else %}text-amber-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Publish
+        </a>
+        {% endif %}
+        {% if session.get('is_super_admin') or session.get('user_role') in ('owner', 'admin') %}
+        <a href="/admin"
+           class="rounded-md px-3 py-2 text-sm font-medium {% if '/admin' in request.path %}bg-slate-900 text-white{% else %}text-gray-300 hover:bg-slate-700 hover:text-white{% endif %}">
+            Admin
+        </a>
+        {% endif %}
+    {% endmacro %}
+
+    {# `scope` disambiguates element ids between the two rendered copies. #}
+    {% macro nav_controls(scope) %}
+        {% if g.orgs and g.orgs|length > 1 %}
+        <form method="get" action="/switch-org" class="flex items-center gap-2">
+            <label for="org-select-{{ scope }}" class="text-xs text-gray-400">Org:</label>
+            <select id="org-select-{{ scope }}" name="org"
+                    onchange="this.form.submit()"
+                    class="bg-slate-700 text-sky-300 text-sm rounded px-2 py-1 border border-slate-600
+                           focus:outline-none focus:ring-1 focus:ring-sky-400">
+                {% for o in g.orgs %}
+                <option value="{{ o.id }}"
+                        {% if o.id|string == g.org_id|string %}selected{% endif %}>
+                    {{ o.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+        {% if g.views and g.views|length > 0 %}
+        <form method="get" class="flex items-center gap-2">
+            <label for="view-select-{{ scope }}" class="text-xs text-gray-400">View:</label>
+            <select id="view-select-{{ scope }}" name="view_id"
+                    onchange="this.form.submit()"
+                    class="bg-slate-700 text-gray-200 text-sm rounded px-2 py-1 border border-slate-600
+                           focus:outline-none focus:ring-1 focus:ring-sky-400">
+                {% for v in g.views %}
+                <option value="{{ v.view_id }}"
+                        {% if v.view_id == g.view_id %}selected{% endif %}>
+                    {{ v.view_name }}
+                    {% if v.is_default %}*{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+        {% if g.user_email %}
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-400">{{ g.user_email }}</span>
+            {% if g.org_name %}
+            <span class="text-xs text-sky-400">{{ g.org_name }}</span>
+            {% endif %}
+            <a href="/auth/logout"
+               class="text-xs text-gray-500 hover:text-white transition-colors">
+                Logout
+            </a>
+        </div>
+        {% endif %}
+    {% endmacro %}
+
+    <div class="min-h-full">
+        <!-- Navigation -->
+        <nav class="bg-slate-800">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-14 items-center justify-between">
+                    <div class="flex items-center gap-8">
+                        <a href="/" class="text-white font-bold text-lg tracking-tight whitespace-nowrap">
+                            ade<span class="text-sky-400">-catalog</span>
+                        </a>
+                        {# Desktop links — hidden below lg, where the full horizontal
+                           bar (~860px) would overflow a phone viewport. #}
+                        <div class="hidden lg:flex gap-1">
+                            {{ nav_links() }}
+                        </div>
+                    </div>
+                    {# Desktop controls (org / view / user) — same lg breakpoint. #}
+                    <div class="hidden lg:flex items-center gap-4">
+                        {{ nav_controls('d') }}
+                    </div>
+                    {# Mobile hamburger (below lg): pure-CSS <details> disclosure,
+                       no JS. Links + controls collapse into a right-aligned panel. #}
+                    <details class="lg:hidden relative group">
+                        <summary class="flex items-center cursor-pointer rounded-md p-2 text-gray-300 hover:bg-slate-700 hover:text-white">
+                            <svg class="h-6 w-6 group-open:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            <svg class="h-6 w-6 hidden group-open:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </summary>
+                        <div class="absolute right-0 top-full z-50 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-md bg-slate-800 p-3 shadow-lg ring-1 ring-black/20">
+                            {{ nav_links() }}
+                            {% if (g.orgs and g.orgs|length > 1) or (g.views and g.views|length > 0) or g.user_email %}
+                            <div class="my-2 border-t border-slate-700"></div>
+                            <div class="flex flex-col gap-3">
+                                {{ nav_controls('m') }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </nav>
+
+        {# Scan completeness banner: flags a partial-by-choice view (TICK-021). #}
+        {% include "partials/view_manifest_banner.html" %}
+
+        <!-- Main content -->
+        <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            {% block content %}{% endblock %}
+            {# AI/human description card: detail pages that pass `enrichment_ctx`.
+               Comes before lineage (summary-first: the object's own description). #}
+            {% if enrichment_ctx is defined %}
+              {% include "partials/enrichment_section.html" %}
+            {% endif %}
+            {# Object-level lineage: rendered only on detail pages, which pass
+               `lineage` / `lineage_query` into the template context. #}
+            {% if lineage is defined or lineage_query is defined %}
+              {% include "partials/lineage_section.html" %}
+            {% endif %}
+        </main>
+    </div>
+
+    {# In-app AI assistant: floating launcher + slide-over chat, on every page (TICK-008). #}
+    {% include "partials/assistant_panel.html" %}
+</body>
+</html>

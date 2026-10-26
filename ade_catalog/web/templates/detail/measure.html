@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.measure_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <a href="/detail/dataset/{{ obj.dataset_name }}" class="hover:text-gray-700">{{ obj.dataset_name }}</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.measure_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.measure_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+            Power BI
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+            measure
+        </span>
+        {% if obj.complexity_score %}
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              {% if obj.complexity_score >= 7 %}bg-red-100 text-red-700
+              {% elif obj.complexity_score >= 4 %}bg-yellow-100 text-yellow-700
+              {% else %}bg-green-100 text-green-700{% endif %}">
+            Complexity: {{ obj.complexity_score }}/10
+        </span>
+        {% endif %}
+    </div>
+    <p class="mt-1 text-sm text-gray-500">
+        {{ obj.report_name }} &rarr; {{ obj.dataset_name }}
+        {% if obj.home_table %} &rarr; {{ obj.home_table }}{% endif %}
+    </p>
+</div>
+
+<!-- Metadata -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Type</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 capitalize">{{ obj.measure_type or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Format</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.format_string or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Folder</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.display_folder or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Dataset</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 truncate">{{ obj.dataset_name }}</p>
+    </div>
+</div>
+
+<!-- DAX expression -->
+<div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">DAX Expression</h2>
+    </div>
+    <div class="p-5">
+        <pre class="text-sm font-mono text-gray-800 bg-gray-50 rounded-md p-4 overflow-x-auto whitespace-pre-wrap">{{ obj.dax_expression }}</pre>
+    </div>
+</div>
+
+<!-- Description -->
+{% if obj.description %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Description</h2>
+    </div>
+    <div class="p-5 text-sm text-gray-700">
+        {{ obj.description }}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

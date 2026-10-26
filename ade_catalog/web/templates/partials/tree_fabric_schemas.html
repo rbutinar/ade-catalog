@@ -1,0 +1,33 @@
+<!-- Schemas within a warehouse or lakehouse -->
+<div class="ml-4 border-l border-gray-300 pl-3 py-1 space-y-1">
+
+  {% for s in schemas %}
+  <div>
+    <button
+      class="flex items-center gap-1 text-sm hover:bg-gray-100 rounded px-1 py-0.5 w-full text-left"
+      hx-get="{{ url_for('catalog.tree_fabric_schema', container_type=container_type, schema_id=s.schema_id) }}"
+      hx-target="#fabric-schema-{{ s.schema_id }}"
+      hx-swap="innerHTML"
+      onclick="this.querySelector('.arrow').classList.toggle('rotate-90')"
+    >
+      <span class="arrow transition-transform text-gray-400">&#9654;</span>
+      <span class="text-gray-800">{{ s.schema_name }}</span>
+      {% if container_type == 'Warehouse' %}
+      <span class="text-gray-500 text-xs ml-auto">
+        {{ s.table_count or 0 }}T
+        {% if s.view_count %}{{ s.view_count }}V{% endif %}
+        {% if s.proc_count %}{{ s.proc_count }}P{% endif %}
+      </span>
+      {% else %}
+      <span class="text-gray-500 text-xs ml-auto">{{ s.table_count or 0 }} tables</span>
+      {% endif %}
+    </button>
+    <div id="fabric-schema-{{ s.schema_id }}"></div>
+  </div>
+  {% endfor %}
+
+  {% if not schemas %}
+  <div class="text-sm text-gray-500 italic px-1">No schemas extracted — run extractor with --extract-sql</div>
+  {% endif %}
+
+</div>

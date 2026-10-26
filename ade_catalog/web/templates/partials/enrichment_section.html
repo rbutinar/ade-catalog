@@ -1,0 +1,8 @@
+{# AI/human description card for detail pages. Expects `enrichment_ctx`:
+   {view_id, object_class, object_id, qualified_name, enrichment(row|None)}.
+   The card + edit form swap inside #enrichment-box via HTMX. #}
+{% if enrichment_ctx %}
+<div id="enrichment-box" class="bg-white rounded-lg border border-gray-200 mt-6">
+  {% include "partials/enrichment_card.html" %}
+</div>
+{% endif %}

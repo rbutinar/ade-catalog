@@ -1,0 +1,22 @@
+<div id="fabric-workspace-wrap" class="flex-1 min-w-[160px]">
+    <label class="block text-xs text-gray-500 mb-1">Workspace</label>
+    <select name="filter_workspace" id="filter-workspace"
+            class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white"
+            hx-get="/catalog/search"
+            hx-trigger="change"
+            hx-target="#search-results"
+            hx-include="[name='q'],[name='platform'],[name='type'],[name='limit'],[name='filter_workspace'],[name='filter_environment']"
+            hx-indicator="#search-spinner">
+        <option value="">{% if selected_environment %}All in this environment{% else %}All (no workspace filter){% endif %}</option>
+        {% for ws in fabric_workspaces %}
+        <option value="{{ ws.workspace_id }}">{{ ws.workspace_name }}</option>
+        {% endfor %}
+    </select>
+    {# When this partial is swapped in via the Environment cascade (HX-Request),
+       fire a search so the results reflect the newly selected environment. #}
+    {% if request.headers.get('HX-Request') %}
+    <span hx-get="/catalog/search" hx-trigger="load" hx-target="#search-results"
+          hx-include="[name='q'],[name='platform'],[name='type'],[name='limit'],[name='filter_workspace'],[name='filter_environment']"
+          hx-indicator="#search-spinner" class="hidden"></span>
+    {% endif %}
+</div>

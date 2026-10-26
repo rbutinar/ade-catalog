@@ -1,0 +1,81 @@
+{% if results_by_type is defined and results_by_type|length > 0 %}
+<div class="text-sm text-gray-500 mb-4">
+    {{ total_count }} result{{ 's' if total_count != 1 }}
+    {% if query %} for "<span class="font-medium text-gray-700">{{ query }}</span>"{% endif %}
+    {% if selected_platform %} in <span class="font-medium text-gray-700">{{ selected_platform }}</span>{% endif %}
+</div>
+
+{% for type_name, items in results_by_type.items() %}
+<details class="bg-white rounded-lg border border-gray-200 mb-4" {% if results_by_type|length == 1 %}open{% endif %}>
+    <summary class="cursor-pointer select-none px-5 py-3 hover:bg-gray-50 transition-colors flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold
+                  {% if 'Pipeline' in type_name %}bg-purple-100 text-purple-700
+                  {% elif 'Warehouse' in type_name %}bg-blue-100 text-blue-700
+                  {% elif 'Lakehouse' in type_name %}bg-emerald-100 text-emerald-700
+                  {% elif 'Notebook' in type_name %}bg-orange-100 text-orange-700
+                  {% elif 'Page' in type_name %}bg-violet-100 text-violet-700
+                  {% elif 'Report' in type_name %}bg-indigo-100 text-indigo-700
+                  {% elif 'Visual' in type_name %}bg-fuchsia-100 text-fuchsia-700
+                  {% elif 'Table' in type_name %}bg-sky-100 text-sky-700
+                  {% elif 'Dataset' in type_name %}bg-amber-100 text-amber-700
+                  {% elif 'Measure' in type_name %}bg-pink-100 text-pink-700
+                  {% elif 'Relationship' in type_name %}bg-cyan-100 text-cyan-700
+                  {% elif 'Column' in type_name %}bg-slate-200 text-slate-700
+                  {% else %}bg-gray-100 text-gray-600{% endif %}">
+                {{ type_name }}
+            </span>
+            <span class="text-sm text-gray-400">({{ items|length }})</span>
+        </div>
+        <svg class="w-4 h-4 text-gray-400 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+    </summary>
+    <div class="border-t border-gray-200">
+        <!-- Table header -->
+        <div class="grid grid-cols-12 gap-2 px-5 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+            <div class="col-span-4">Name</div>
+            <div class="col-span-2">Platform</div>
+            <div class="col-span-4">Context</div>
+            <div class="col-span-2 text-right">Info</div>
+        </div>
+        <!-- Rows -->
+        <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+            {% for item in items %}
+            <a href="{{ item.detail_url or ('/detail/' ~ item.detail_type ~ '/' ~ item.id) }}"
+               class="grid grid-cols-12 gap-2 px-5 py-2.5 hover:bg-sky-50 transition-colors items-center group">
+                <div class="col-span-4 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate group-hover:text-sky-700">{{ item.name }}</p>
+                </div>
+                <div class="col-span-2">
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                          {% if item.platform == 'fabric' %}bg-teal-100 text-teal-700
+                          {% elif item.platform == 'databricks' %}bg-orange-100 text-orange-700
+                          {% elif item.platform == 'powerbi' %}bg-amber-100 text-amber-700
+                          {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ item.platform }}
+                    </span>
+                </div>
+                <div class="col-span-4 min-w-0">
+                    <p class="text-xs text-gray-500 truncate">{{ item.context or '' }}</p>
+                </div>
+                <div class="col-span-2 text-right">
+                    <p class="text-xs text-gray-400">{{ item.info or '' }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endfor %}
+
+{% elif query is defined and query %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-sm text-gray-500">No results for "<span class="font-medium">{{ query }}</span>"</p>
+    <p class="text-xs text-gray-400 mt-2">Try a shorter search term or change the filters</p>
+</div>
+{% else %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+    <p class="text-sm text-gray-500">Type in the search box or select a filter to browse the catalog</p>
+</div>
+{% endif %}

@@ -1,0 +1,18 @@
+# ade-catalog (public preview) — self-host hygiene.
+# NOTE: .env IS committed here as the zero-config local default (no secrets in it).
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local SQLite catalog (built locally, not source)
+catalog_sqlite/
+*.sqlite
+*.sqlite-*
+ade_data/*/catalog.db
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

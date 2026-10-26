@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.dataset_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.dataset_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.dataset_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+            Power BI
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+            {{ obj.connection_mode }}
+        </span>
+    </div>
+    <p class="mt-1 text-sm text-gray-500">Report: {{ obj.report_name }}</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Tables</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.table_count }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Measures</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.measure_count }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Relationships</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.relationship_count }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Report Type</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.report_type or '—' }}</p>
+    </div>
+</div>
+
+<!-- Tables -->
+<div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Tables</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                    <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rows</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for t in tables %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-5 py-3 text-sm">
+                        <a href="/detail/pbi_table/{{ t.table_id }}" class="font-medium text-sky-600 hover:text-sky-800">
+                            {{ t.table_name }}
+                        </a>
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500 font-mono">{{ t.source_table or '—' }}</td>
+                    <td class="px-5 py-3 text-sm text-gray-500 text-right">
+                        {{ '{:,}'.format(t.row_count) if t.row_count else '—' }}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500">{{ t.source_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Measures -->
+<div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Measures</h2>
+    </div>
+    <div class="divide-y divide-gray-100">
+        {% for m in measures %}
+        <a href="/detail/measure/{{ m.measure_id }}"
+           class="block px-5 py-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-sky-600">{{ m.measure_name }}</p>
+                    <p class="text-xs text-gray-500 font-mono mt-0.5 truncate max-w-lg">{{ m.dax_expression }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">{{ m.measure_type }}</span>
+                    {% if m.complexity_score %}
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                          {% if m.complexity_score >= 7 %}bg-red-100 text-red-700
+                          {% elif m.complexity_score >= 4 %}bg-yellow-100 text-yellow-700
+                          {% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ m.complexity_score }}/10
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Relationships -->
+{% if relationships %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Relationships</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
+                    <th class="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cardinality</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for r in relationships %}
+                <tr>
+                    <td class="px-5 py-3 text-sm">
+                        <span class="font-medium text-gray-900">{{ r.from_table }}</span>
+                        <span class="text-gray-400">.</span>
+                        <span class="text-gray-600">{{ r.from_column }}</span>
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500 text-center font-mono">
+                        {{ r.cardinality | replace('_', ':') }}
+                    </td>
+                    <td class="px-5 py-3 text-sm">
+                        <span class="font-medium text-gray-900">{{ r.to_table }}</span>
+                        <span class="text-gray-400">.</span>
+                        <span class="text-gray-600">{{ r.to_column }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

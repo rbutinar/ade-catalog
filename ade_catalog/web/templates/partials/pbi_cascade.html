@@ -1,0 +1,12 @@
+{% if datasets %}
+<div class="flex-1 min-w-[160px]">
+    <label class="block text-xs text-gray-500 mb-1">Dataset</label>
+    <select name="filter_dataset"
+            class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white">
+        <option value="">All datasets</option>
+        {% for ds in datasets %}
+        <option value="{{ ds.dataset_id }}">{{ ds.dataset_name }}</option>
+        {% endfor %}
+    </select>
+</div>
+{% endif %}

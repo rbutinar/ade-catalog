@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Lineage · ade-catalog{% endblock %}
+
+{% block head %}
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+  window.addEventListener('DOMContentLoaded', async () => {
+    const src = document.getElementById('mermaid-src');
+    const out = document.getElementById('graph-out');
+    if (src && out && src.textContent.trim()) {
+      try {
+        const { svg } = await mermaid.render('lineageGraph', src.textContent.trim());
+        out.innerHTML = svg;
+      } catch (e) {
+        out.innerHTML = '<p class="text-sm text-red-500">Could not render graph: ' + e.message + '</p>';
+      }
+    }
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-start justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Lineage</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Pick an object and explore its upstream / downstream connections — including
+      edges that cross platforms (Databricks → Fabric → Power BI).
+    </p>
+  </div>
+  {% include "partials/lineage_modeswitch.html" %}
+</div>
+
+<!-- Controls -->
+<form method="get" class="flex flex-wrap items-end gap-3 mb-6 bg-white p-4 rounded-lg border border-gray-200">
+  <div class="flex-1 min-w-[220px]">
+    <label class="block text-xs font-medium text-gray-600 mb-1">Object</label>
+    <input type="text" name="q" value="{{ query }}" placeholder="e.g. gold_ft_sales, FactSales, raw_orders"
+           class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-gray-600 mb-1">Direction</label>
+    <select name="direction" class="rounded-md border-gray-300 border px-3 py-2 text-sm">
+      {% for d in directions %}
+      <option value="{{ d }}" {% if d == direction %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-gray-600 mb-1">Depth</label>
+    <input type="number" name="depth" value="{{ depth }}" min="1" max="10"
+           class="w-20 rounded-md border-gray-300 border px-3 py-2 text-sm">
+  </div>
+  <button type="submit"
+          class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">
+    Explore
+  </button>
+</form>
+
+{% if error %}
+<div class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+  {{ error }}
+</div>
+{% elif result %}
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+  <!-- Graph -->
+  <div class="lg:col-span-3 bg-white rounded-lg border border-gray-200 p-4 overflow-auto">
+    <div class="text-xs text-gray-500 mb-2">
+      Root: <span class="font-semibold text-gray-800">{{ result.root_node.display_name }}</span>
+      · {{ result.total_nodes }} nodes · {{ result.total_edges }} edges
+    </div>
+    <pre id="mermaid-src" class="hidden">{{ result.mermaid }}</pre>
+    <div id="graph-out" class="min-h-[200px]">
+      <p class="text-sm text-gray-400">Rendering…</p>
+    </div>
+  </div>
+  <!-- Node list -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">Connected objects</h2>
+    <ul class="space-y-1 text-sm">
+      {% for n in result.nodes %}
+      <li class="flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full
+          {% if n.platform == 'databricks' %}bg-red-500
+          {% elif n.platform == 'powerbi' %}bg-yellow-400
+          {% elif n.platform == 'fabric' %}bg-sky-500
+          {% else %}bg-gray-400{% endif %}"></span>
+        <span class="text-gray-800">{{ n.name }}</span>
+        <span class="text-gray-400 text-xs">{{ n.type }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% else %}
+<div class="text-sm text-gray-400">Enter an object name above to explore its lineage.</div>
+{% endif %}
+{% endblock %}

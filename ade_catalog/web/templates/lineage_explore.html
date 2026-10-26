@@ -1,0 +1,948 @@
+{% extends "base.html" %}
+{% block title %}Lineage Explorer · ade-catalog{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-start justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Lineage</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Start from an object; each neighbour class shows as a <b>class (count)</b> bubble —
+      click it to expand into instances, click an instance to explore further.
+    </p>
+  </div>
+  {% include "partials/lineage_modeswitch.html" %}
+</div>
+
+<form onsubmit="event.preventDefault(); startFrom(document.getElementById('q').value);"
+      class="mb-4 bg-white p-3 rounded-lg border border-gray-200 flex flex-col gap-2">
+  <!-- row 1: search -->
+  <div class="flex gap-2">
+    <input id="q" value="{{ query }}" placeholder="object name, e.g. Line Chart Manual, dbo.stock_plan, MD - Calendar"
+           class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+    <button class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">Explore</button>
+  </div>
+  <!-- row 2: compact action bar, grouped: view · state · toggles · save -->
+  <div class="flex flex-wrap items-center gap-1.5">
+    <select id="layout" onchange="relayout()" class="rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white" title="Layout algorithm">
+      <option value="cose">layout: force</option>
+      <option value="concentric">layout: rings</option>
+      <option value="breadthfirst">layout: tree</option>
+      <option value="grid">layout: grid</option>
+    </select>
+    <button type="button" onclick="relayout()" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Re-run the layout (reposition nodes)">Reorganize</button>
+    <button type="button" onclick="cy.fit(null,40)" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Zoom/pan to fit everything in view">Fit</button>
+    <span class="mx-0.5 h-5 w-px bg-gray-200"></span>
+    <button id="backbtn" type="button" onclick="goBack()" disabled class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white" title="Undo the last graph change">&larr; Back</button>
+    <button type="button" onclick="resetGraph()" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Clear and start over from the root object">Reset</button>
+    <button id="hiddenbtn" type="button" onclick="unhideAll()" class="hidden rounded-md border border-amber-300 text-amber-700 px-2.5 py-1.5 text-xs hover:bg-amber-50" title="Restore nodes hidden via right-click">Show hidden (0)</button>
+    <span class="mx-0.5 h-5 w-px bg-gray-200"></span>
+    <label class="flex items-center gap-1 text-xs text-gray-600" title="When on, the whole graph re-arranges on every change. When off, existing nodes stay put and only new ones are placed.">
+      <input type="checkbox" id="autoarr" onchange="autoArrange=this.checked"> auto-arrange</label>
+    <label class="flex items-center gap-1 text-xs text-gray-600" title="Show relationship-type labels on all edges (or click a single edge to reveal just that one)">
+      <input type="checkbox" id="showrel" onchange="toggleAllRel(this.checked)"> relations</label>
+    <span class="mx-0.5 h-5 w-px bg-gray-200"></span>
+    <button type="button" onclick="saveView()" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Save this exploration (in this browser)">Save</button>
+    <select id="savedviews" onchange="loadSavedView(this.value)" class="rounded-md border border-gray-300 px-2 py-1.5 text-xs bg-white" title="Load a saved exploration">
+      <option value="">Saved views&hellip;</option>
+    </select>
+    <button type="button" onclick="exportView()" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Download this exploration as a file (to share or archive)">Export</button>
+    <button type="button" onclick="document.getElementById('importfile').click()" class="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs hover:bg-gray-50" title="Load an exploration from a file">Import</button>
+    <input type="file" id="importfile" accept="application/json" class="hidden" onchange="importView(this.files[0]); this.value='';">
+  </div>
+</form>
+
+<div id="msg" class="text-sm text-amber-700 mb-2"></div>
+<div id="candidates" class="mb-2"></div>
+<div class="relative">
+  <div id="cy" class="bg-white rounded-lg border border-gray-200" style="height:70vh;"></div>
+  <!-- Searchable instance panel for large classes -->
+  <div id="side-panel" class="hidden absolute top-0 right-0 h-full w-80 bg-white border border-gray-200 rounded-r-lg shadow-lg flex flex-col">
+    <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+      <span id="sp-title" class="text-sm font-semibold text-gray-800"></span>
+      <button type="button" onclick="closePanel()" class="text-gray-400 hover:text-gray-700 text-lg leading-none">&times;</button>
+    </div>
+    <!-- toggle: for a class bubble, switch between its instances and its connected classes -->
+    <div id="sp-toggle" class="hidden px-2 pt-2 flex gap-1">
+      <button type="button" id="sp-tab-inst" onclick="bubbleShowInstances()"
+              class="flex-1 rounded px-2 py-1 text-xs border border-gray-300">Instances</button>
+      <button type="button" id="sp-tab-cls" onclick="bubbleShowClasses()"
+              class="flex-1 rounded px-2 py-1 text-xs border border-gray-300">Connected classes</button>
+    </div>
+    <!-- bubble-level actions (shown with the toggle) -->
+    <div id="sp-bubbleactions" class="hidden px-2 pt-1 flex gap-3 text-xs">
+      <button type="button" onclick="traceUpstreamFromPanel()" class="text-sky-600 hover:text-sky-700" title="Add all upstream classes recursively, up to the sources">Trace upstream &uarr;</button>
+      <button type="button" onclick="removeClassFromPanel()" class="text-rose-600 hover:text-rose-700" title="Remove this class (and its pinned instances) from the graph">Remove class</button>
+    </div>
+    <div id="sp-classmode" class="flex flex-col flex-1 min-h-0">
+      <input id="sp-search" oninput="renderPanelList()" placeholder="filter instances…"
+             class="m-2 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-sky-400">
+      <div class="px-3 pb-2 flex gap-3 text-xs">
+        <button type="button" onclick="addAllPanel()" class="text-sky-600 hover:text-sky-700">Add all shown</button>
+        <button type="button" onclick="clearPanelAdded()" class="text-gray-500 hover:text-gray-700">Return all</button>
+      </div>
+      <ul id="sp-list" class="flex-1 overflow-y-auto text-sm divide-y divide-gray-100"></ul>
+    </div>
+    <div id="sp-details" class="hidden flex-1 overflow-y-auto p-3 text-sm"></div>
+    <div id="sp-aggmode" class="hidden flex flex-col flex-1 min-h-0">
+      <div class="px-3 pt-2 flex items-center justify-between">
+        <span class="text-xs text-gray-500">Direct connections</span>
+        <button type="button" onclick="addAllAgg()" class="text-sky-600 hover:text-sky-700 text-xs">Add all</button>
+      </div>
+      <ul id="sp-agglist" class="flex-1 overflow-y-auto text-sm divide-y divide-gray-100"></ul>
+      <div class="px-3 pt-2 border-t border-gray-100 flex items-center justify-between">
+        <span class="text-xs text-gray-500" title="Classes reachable through intermediate nodes; clicking one adds a shortcut, skipping the middle">Indirect (reachable)</span>
+        <button type="button" id="sp-indirect-btn" onclick="findIndirect()" class="text-sky-600 hover:text-sky-700 text-xs">Find&hellip;</button>
+      </div>
+      <label class="px-3 pb-1 flex items-center gap-1 text-[11px] text-gray-500" title="Follow only data-flow edges (feeds/produces) — what is actually consumed, not what's merely joinable via model relationships">
+        <input type="checkbox" id="sp-used-only" onchange="findIndirect()"> used only (data-flow)</label>
+      <ul id="sp-indirectlist" class="flex-1 overflow-y-auto text-sm divide-y divide-gray-100"></ul>
+    </div>
+    <div id="sp-trail" class="hidden flex-1 overflow-y-auto p-3 text-sm"></div>
+  </div>
+  <!-- right-click context menu -->
+  <div id="ctx-menu" class="hidden absolute z-20 bg-white border border-gray-200 rounded shadow-lg text-sm py-1">
+    <button type="button" onclick="ctxAction('details')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Details</button>
+    <button type="button" onclick="ctxAction('aggclasses')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Connected classes&hellip;</button>
+    <button type="button" onclick="ctxAction('upstream')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Upstream classes (all)</button>
+    <button type="button" onclick="ctxAction('trail')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Transformation trail</button>
+    <button type="button" onclick="ctxAction('hide')"    class="block w-full text-left px-4 py-1.5 hover:bg-amber-50 text-amber-700">Hide (bypass)</button>
+    <button type="button" onclick="ctxAction('focus')"   class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Focus</button>
+    <button type="button" onclick="ctxAction('remove')"  class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Remove (back to class)</button>
+  </div>
+  <!-- class-bubble context menu -->
+  <div id="bubble-menu" class="hidden absolute z-20 bg-white border border-gray-200 rounded shadow-lg text-sm py-1">
+    <button type="button" onclick="bubbleMenuAction('details')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50" title="Open the panel to inspect its instances and connected classes, then choose what to add">View details&hellip;</button>
+    <button type="button" onclick="bubbleMenuAction('open')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50" title="Add all its instances straight onto the graph">Open instances</button>
+    <button type="button" onclick="bubbleMenuAction('hide')" class="block w-full text-left px-4 py-1.5 hover:bg-amber-50 text-amber-700">Hide (bypass)</button>
+    <button type="button" onclick="bubbleMenuAction('remove')" class="block w-full text-left px-4 py-1.5 hover:bg-rose-50 text-rose-600">Remove class</button>
+  </div>
+  <!-- edge (relationship) menu -->
+  <div id="edge-menu" class="hidden absolute z-20 bg-white border border-gray-200 rounded shadow-lg text-sm py-1">
+    <div id="edge-menu-rel" class="px-4 py-1 text-xs font-semibold text-gray-700"></div>
+    <button type="button" onclick="edgeRel('this')" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Show relation on this edge</button>
+    <button type="button" onclick="edgeRel('all')"  class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Show relation on all edges</button>
+    <button type="button" onclick="edgeTransform()" class="block w-full text-left px-4 py-1.5 hover:bg-sky-50">Show transformation&hellip;</button>
+  </div>
+</div>
+<p class="text-xs text-gray-400 mt-2">Tip: click a node to expand its neighbours, click it again to collapse them. Right-click a node for Details / Connected classes / Upstream classes / <b>Hide (bypass)</b> / Focus / Remove. Dashed bubbles are classes — left-click (or right-click &rarr; <b>View details</b>) opens the panel to inspect its instances + connected classes and decide; right-click &rarr; <b>Open instances</b> adds them all straight to the graph. The panel also offers <b>Trace upstream</b>, indirect <b>reachable</b> jumps, <b>Hide</b> and <b>Remove class</b>. <b>Hide (bypass)</b> tidies away an intermediate while keeping its endpoints linked; <b>Show hidden</b> restores them. <b>Back</b> undoes the last change; with <b>auto-arrange</b> off, existing nodes stay put and only new ones are placed. Drag to pan, scroll to zoom.</p>
+
+<script>
+const TYPE_COLOR = {
+  report:'#6366f1', dataset:'#f59e0b', semantic_table:'#0ea5e9', table:'#0ea5e9',
+  delta_table:'#0ea5e9', unity_table:'#0ea5e9', view:'#0ea5e9', materialized_view:'#0ea5e9',
+  measure:'#ec4899', visual:'#d946ef', page:'#8b5cf6', report_page:'#8b5cf6', column:'#64748b',
+  notebook:'#f97316', pipeline:'#a855f7', activity:'#a855f7',
+  fabric_warehouse:'#3b82f6', warehouse:'#3b82f6', fabric_lakehouse:'#10b981', lakehouse:'#10b981',
+  workspace:'#64748b', data_product:'#0d9488', external:'#9ca3af'
+};
+const colorFor = t => TYPE_COLOR[(t||'').toLowerCase()] || '#9ca3af';
+const msg = m => document.getElementById('msg').textContent = m || '';
+
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  wheelSensitivity: 0.2,
+  minZoom: 0.15, maxZoom: 1.6,          // cap fit-zoom so labels don't balloon on small graphs
+  style: [
+    { selector: 'node', style: {
+        'background-color': 'data(color)', 'label': 'data(label)', 'color': '#111',
+        'font-size': 8, 'text-wrap': 'wrap', 'text-max-width': 100,
+        'min-zoomed-font-size': 6,        // hide labels once they'd be tiny (declutter)
+        'text-valign': 'bottom', 'text-margin-y': 3, 'width': 24, 'height': 24,
+        'border-width': 2, 'border-color': '#fff' } },
+    { selector: 'node[kind = "group"]', style: {
+        'shape': 'round-rectangle', 'width': 'label', 'height': 22, 'padding': 6,
+        'background-opacity': 0.15, 'background-color': 'data(color)',
+        'border-width': 1.5, 'border-style': 'dashed', 'border-color': 'data(color)',
+        'color': '#333', 'font-weight': 'bold', 'text-valign': 'center', 'text-margin-y': 0 } },
+    // an emptied class bubble (all instances pulled out) is never shown — declared
+    // by data so it stays hidden even after a restore/import (inline styles are lost).
+    { selector: 'node[kind = "group"][count <= 0]', style: { 'display': 'none' } },
+    { selector: 'node[kind = "root"]', style: { 'border-color': '#111', 'border-width': 3, 'width': 34, 'height': 34 } },
+    { selector: 'edge', style: {
+        'width': 1.5, 'line-color': '#cbd5e1', 'target-arrow-color': '#cbd5e1',
+        'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+        'font-size': 8, 'color': '#94a3b8' } },
+    // relationship-type labels are OFF by default; shown per-edge or globally on demand
+    { selector: 'edge.showrel', style: { 'label': 'data(rel)' } },
+    // shortcut edges = a jump to an indirectly-reachable class (skipping intermediates)
+    { selector: 'edge.shortcut', style: {
+        'line-style': 'dashed', 'line-dash-pattern': [6, 3], 'width': 2,
+        'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b', 'color': '#b45309' } },
+    // bypass edges = connection kept alive across a hidden intermediate node
+    { selector: 'edge.bypass', style: {
+        'line-style': 'dotted', 'width': 1.5,
+        'line-color': '#94a3b8', 'target-arrow-color': '#94a3b8' } },
+    { selector: 'edge:selected', style: { 'line-color': '#0ea5e9', 'target-arrow-color': '#0ea5e9', 'width': 2.5 } },
+  ],
+});
+
+function addNode(n, kind, viaGroup) {
+  const id = 'n' + n.id;
+  if (cy.getElementById(id).nonempty()) return id;
+  const data = { id, label: (n.label||'') + (n.type ? '\n('+n.type+')' : ''),
+                 color: colorFor(n.type), type: n.type, kind: kind||'node', expanded: false };
+  if (viaGroup) data.viaGroup = viaGroup;   // only members carry this (for collapse)
+  cy.add({ data });
+  return id;
+}
+function addEdge(src, tgt, rel) {
+  const id = 'e_' + src + '_' + tgt + '_' + (rel||'');
+  if (cy.getElementById(id).nonempty()) return;
+  const e = cy.add({ data: { id, source: src, target: tgt, rel: rel||'' } });
+  if (showAllRel && (rel||'')) e.addClass('showrel');
+}
+function relayout() {
+  const sel = document.getElementById('layout');
+  const name = (sel && sel.value) || 'cose';
+  const opts = { name, animate:false, padding:40, fit:true };
+  if (name === 'cose') { opts.nodeRepulsion = 12000; opts.idealEdgeLength = 90; opts.nodeOverlap = 24; }
+  else if (name === 'concentric') { opts.concentric = n => n.degree(); opts.levelWidth = () => 3; opts.minNodeSpacing = 18; }
+  else if (name === 'breadthfirst') { opts.spacingFactor = 1.1; opts.directed = true; }
+  // consider only visible elements so Focus lays out cleanly
+  cy.layout({ ...opts, eles: cy.elements(':visible') }).run();
+}
+
+// ---- stable placement: keep existing nodes fixed, only place the new ones ----
+let autoArrange = false;   // toggled from the toolbar; off = existing nodes stay put
+function _nodeIds() { const s = new Set(); cy.nodes().forEach(n => s.add(n.id())); return s; }
+function _newSince(before) { return cy.nodes().filter(n => !before.has(n.id())); }
+function placeNear(coll, anchorId) {
+  if (!coll || coll.length === 0) return;
+  const a = anchorId ? cy.getElementById(anchorId) : null;
+  const base = (a && a.nonempty()) ? a.position()
+             : (cy.nodes().nonempty() ? cy.nodes()[0].position() : { x: 0, y: 0 });
+  const n = coll.length, R = 70 + n * 8;
+  coll.forEach((ele, i) => {
+    const ang = -Math.PI / 2 + 2 * Math.PI * (i + 1) / (n + 1);
+    ele.position({ x: base.x + R * Math.cos(ang), y: base.y + R * Math.sin(ang) });
+  });
+}
+function arrange(newColl, anchorId) {      // after an ADD: full relayout, or stable placement
+  if (autoArrange) { relayout(); return; }
+  placeNear(newColl, anchorId);
+}
+function afterRemove() { if (autoArrange) relayout(); }   // stable mode leaves survivors in place
+
+// ---- history (Back) ----
+let history = [];
+function pushHist() {
+  history.push({ els: cy.elements().jsons(), pan: { ...cy.pan() }, zoom: cy.zoom() });
+  if (history.length > 30) history.shift();
+  updateBackBtn();
+}
+function goBack() {
+  if (!history.length) return;
+  const s = history.pop();
+  closePanel(); hideCtxMenu(); hideEdgeMenu(); hideBubbleMenu();
+  cy.elements().remove();
+  cy.add(s.els);
+  cy.viewport({ zoom: s.zoom, pan: s.pan });
+  hiddenNodes.clear(); updateHiddenBtn();   // restored snapshots are fully visible
+  updateBackBtn();
+}
+function updateBackBtn() { const b = document.getElementById('backbtn'); if (b) b.disabled = history.length === 0; }
+
+// ---- relationship-type labels (off by default; per-edge or global) ----
+let showAllRel = false;
+function toggleAllRel(on) { showAllRel = on; cy.edges().forEach(e => e.toggleClass('showrel', on && !!e.data('rel'))); }
+function groupRel(members) {                 // a representative rel for an aggregate edge (blank if mixed)
+  const rels = [...new Set((members || []).map(m => m.rel).filter(Boolean))];
+  return rels.length === 1 ? rels[0] : '';
+}
+let edgeTargetId = null;
+function showEdgeMenu(edge, ev) {
+  edgeTargetId = edge.id();
+  const rel = edge.data('rel') || '(no type)';
+  document.getElementById('edge-menu-rel').textContent = rel;
+  const menu = document.getElementById('edge-menu');
+  const box = document.getElementById('cy').getBoundingClientRect();
+  menu.style.left = (ev.clientX - box.left) + 'px';
+  menu.style.top = (ev.clientY - box.top) + 'px';
+  menu.classList.remove('hidden');
+}
+function hideEdgeMenu() { document.getElementById('edge-menu').classList.add('hidden'); edgeTargetId = null; }
+function edgeRel(scope) {
+  if (scope === 'all') { const cb = document.getElementById('showrel'); cb.checked = true; toggleAllRel(true); }
+  else if (edgeTargetId) { const e = cy.getElementById(edgeTargetId); if (e.nonempty() && e.data('rel')) e.addClass('showrel'); }
+  hideEdgeMenu();
+}
+function edgeTransform() {                     // show the transformation at this step (the target's logic, e.g. DAX)
+  const id = edgeTargetId; hideEdgeMenu();
+  if (!id) return;
+  const e = cy.getElementById(id); if (e.empty()) return;
+  const tgt = e.data('target');
+  if (tgt && tgt[0] === 'n') showDetails(parseInt(tgt.slice(1)));
+}
+
+// ---- hide intermediate nodes (with bypass so endpoints stay connected) ----
+let hiddenNodes = new Set();
+function hideNode(node) {
+  if (!node || node.empty()) return;
+  pushHist();
+  const id = node.id();
+  const ups = node.incomers('edge').filter(e => e.visible()).sources().filter(n => n.visible() && n.id() !== id);
+  const downs = node.outgoers('edge').filter(e => e.visible()).targets().filter(n => n.visible() && n.id() !== id);
+  ups.forEach(u => downs.forEach(d => { if (u.id() !== d.id()) addBypass(u.id(), d.id(), id); }));  // keep the flow alive
+  node.style('display', 'none');
+  node.connectedEdges().style('display', 'none');
+  hiddenNodes.add(id);
+  updateHiddenBtn();
+  if (autoArrange) relayout();
+}
+function addBypass(src, tgt, viaId) {
+  const id = 'bp_' + src + '_' + tgt + '_' + viaId;
+  if (cy.getElementById(id).nonempty()) return;
+  cy.add({ data: { id, source: src, target: tgt, rel: '(via hidden)', bypassVia: viaId } }).addClass('bypass');
+}
+function unhideNode(id) {
+  const n = cy.getElementById(id); if (n.empty()) return;
+  n.style('display', 'element');
+  n.connectedEdges().style('display', 'element');
+  cy.edges('[bypassVia = "' + id + '"]').remove();
+  hiddenNodes.delete(id);
+  updateHiddenBtn();
+}
+function unhideAll() {
+  if (!hiddenNodes.size) return;
+  pushHist();
+  [...hiddenNodes].forEach(unhideNode);
+  if (autoArrange) relayout();
+}
+function updateHiddenBtn() {
+  const b = document.getElementById('hiddenbtn'); if (!b) return;
+  b.textContent = 'Show hidden (' + hiddenNodes.size + ')';
+  b.classList.toggle('hidden', hiddenNodes.size === 0);
+}
+
+// ---- class-bubble context menu ----
+let bubbleMenuId = null;
+function showBubbleMenu(bubble, ev) {
+  bubbleMenuId = bubble.id();
+  const menu = document.getElementById('bubble-menu');
+  const box = document.getElementById('cy').getBoundingClientRect();
+  menu.style.left = (ev.clientX - box.left) + 'px';
+  menu.style.top = (ev.clientY - box.top) + 'px';
+  menu.classList.remove('hidden');
+}
+function hideBubbleMenu() { document.getElementById('bubble-menu').classList.add('hidden'); bubbleMenuId = null; }
+function bubbleMenuAction(a) {
+  const id = bubbleMenuId; hideBubbleMenu();
+  if (!id) return;
+  const g = cy.getElementById(id); if (g.empty() || g.data('kind') !== 'group') return;
+  // 'details' = inspect: open the panel (instances list + Instances/Connected-
+  // classes toggle) and let the user decide. 'open' = act: pull all instances
+  // straight onto the graph.
+  if (a === 'details') openPanel(g);
+  else if (a === 'open') expandGroup(g);
+  else if (a === 'hide') hideNode(g);
+  else if (a === 'remove') removeClass(id);
+}
+
+let lastTapped = null;
+let focused = false;      // Focus hides the rest; a background click restores
+let currentRoot = null;   // the object the exploration started from (for Reset)
+function focusLast() {
+  if (!lastTapped || cy.getElementById(lastTapped).empty()) { msg('Tap a node first, then Focus.'); return; }
+  msg('');
+  const n = cy.getElementById(lastTapped);
+  const keep = n.closedNeighborhood();      // the node + its edges + direct neighbours
+  cy.elements().style('display', 'none');
+  keep.style('display', 'element');
+  hideEmptyBubbles();
+  focused = true;
+  relayout(); cy.fit(keep, 50);
+}
+function resetView() { cy.elements().style('display', 'element'); hideEmptyBubbles(); focused = false; relayout(); }
+function resetGraph() {   // true reset: clear and start over from the root object
+  if (cy.elements().nonempty()) pushHist();
+  closePanel();
+  if (currentRoot) loadRoot(currentRoot);
+  else startFrom(document.getElementById('q').value);
+}
+
+// ---- Searchable instance panel (for large classes) ----
+const SMALL_GROUP = 8;
+let panelGid = null;
+let panelBubbleId = null;   // the class bubble the panel is about (enables the instances<->classes toggle)
+function esc(s){ const d=document.createElement('div'); d.textContent = (s==null?'':s); return d.innerHTML; }
+
+function openPanel(g) {                        // class mode: searchable instance list
+  panelGid = g.id();
+  panelBubbleId = g.id();
+  document.getElementById('sp-title').textContent = g.data('type') + ' (' + g.data('count') + ')';
+  document.getElementById('sp-search').value = '';
+  _panelMode('class');
+  renderPanelList();
+}
+function closePanel() { document.getElementById('side-panel').classList.add('hidden'); panelGid = null; panelBubbleId = null; }
+
+// Attribute descriptors come from the server registry (single source of truth,
+// shared with MCP/export). Each descriptor is {key, label, type}; type drives
+// rendering (url -> link, code -> code block, else -> table row).
+let ATTR_SCHEMA = {};
+async function loadAttrSchema() {
+  try { ATTR_SCHEMA = (await (await fetch('/lineage/api/attribute-schema')).json()) || {}; }
+  catch (e) { ATTR_SCHEMA = {}; }
+}
+async function showDetails(nodeId) {          // details mode: a curated, per-type attribute card
+  const res = await fetch('/lineage/api/node/' + nodeId);
+  const d = await res.json();
+  if (d.error) return;
+  const p = d.properties || {};
+  document.getElementById('sp-title').textContent = d.label;
+  let html = '<div class="mb-1"><span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"'
+           + ' style="background:' + colorFor(d.type) + '22"><span class="inline-block w-2 h-2 rounded-full"'
+           + ' style="background:' + colorFor(d.type) + '"></span>' + esc(d.type) + '</span>'
+           + ' <span class="text-xs text-gray-500">' + esc(d.platform || '') + '</span></div>'
+           + '<div class="text-[11px] text-gray-400 break-all mb-2">' + esc(d.qualified_name || '') + '</div>';
+  if (d.detail_url) {
+    html += '<div class="mb-3"><a href="' + esc(d.detail_url) + '" target="_blank" '
+          + 'class="inline-flex items-center gap-1 text-xs text-sky-600 hover:underline">Open full details &#8599;</a></div>';
+  }
+  const spec = ATTR_SCHEMA[d.type] || [];
+  const shown = new Set();
+  const trs = [];       // scalar attribute rows (label / url / number / id / date / text)
+  const blocks = [];    // code blocks (dax, sql, ...)
+  spec.forEach(f => {
+    shown.add(f.key);
+    const v = p[f.key];
+    if (v === undefined || v === null || v === '') return;
+    if (f.type === 'code') { blocks.push([f.label, String(v)]); return; }
+    const cell = f.type === 'url'
+      ? '<a href="' + esc(String(v)) + '" target="_blank" class="text-sky-600 hover:underline break-all">Open &#8599;</a>'
+      : esc(String(v));
+    trs.push('<tr class="border-b border-gray-100 align-top"><td class="py-1 pr-2 text-gray-500 whitespace-nowrap">' + esc(f.label) + '</td><td class="py-1 text-gray-800 break-words">' + cell + '</td></tr>');
+  });
+  if (trs.length) html += '<table class="w-full text-xs"><tbody>' + trs.join('') + '</tbody></table>';
+  blocks.forEach(([label, code]) => {
+    html += '<div class="mt-3"><div class="text-xs font-semibold text-gray-600 mb-1">' + esc(label) + '</div>'
+          + '<pre class="text-[11px] bg-gray-50 border border-gray-200 rounded p-2 overflow-auto max-h-64 whitespace-pre-wrap">' + esc(code) + '</pre></div>';
+  });
+  const extra = Object.keys(p).filter(k => !shown.has(k) && p[k] != null && p[k] !== '' && typeof p[k] !== 'object');
+  if (extra.length) {
+    html += '<details class="mt-3"><summary class="text-xs text-gray-500 cursor-pointer">More attributes</summary>'
+          + '<table class="w-full text-xs mt-1"><tbody>'
+          + extra.map(k => '<tr class="border-b border-gray-100 align-top"><td class="py-1 pr-2 text-gray-500 whitespace-nowrap">' + esc(k) + '</td><td class="py-1 text-gray-800 break-words">' + esc(String(p[k])) + '</td></tr>').join('')
+          + '</tbody></table></details>';
+  }
+  if (!trs.length && !blocks.length && !extra.length)
+    html += '<div class="text-xs text-gray-400">No stored attributes for this object.</div>';
+  document.getElementById('sp-details').innerHTML = html;
+  _panelMode('details');
+}
+async function showTrail(nodeId) {            // transformation logic along the upstream path
+  document.getElementById('sp-title').textContent = 'Transformation trail';
+  _panelMode('trail');
+  document.getElementById('sp-trail').innerHTML = '<div class="text-xs text-gray-400">Loading…</div>';
+  let steps = [];
+  try { steps = (await (await fetch('/lineage/api/transform-trail/' + nodeId)).json()).steps || []; }
+  catch (e) { steps = []; }
+  let html;
+  if (!steps.length) {
+    html = '<div class="text-xs text-gray-400">No transformations captured along the upstream path — pass-through data assets only, or the transform text is not extracted yet (e.g. ETL/notebook code).</div>';
+  } else {
+    html = '<div class="text-xs text-gray-500 mb-2">How the data is transformed upstream, step by step (nearest first):</div>'
+      + steps.map(s =>
+          '<div class="mb-3">'
+          + '<div class="flex items-center gap-2 mb-1">'
+          + '<span class="inline-block w-2 h-2 rounded-full" style="background:' + colorFor(s.type) + '"></span>'
+          + '<span class="text-xs font-semibold text-gray-800 break-words">' + esc(s.label) + '</span>'
+          + '<span class="text-[10px] text-gray-400 whitespace-nowrap">' + esc(s.type) + ' · ' + esc(s.transform_type) + ' · ' + s.depth + ' hops</span>'
+          + '</div>'
+          + '<pre class="text-[11px] bg-gray-50 border border-gray-200 rounded p-2 overflow-auto max-h-48 whitespace-pre-wrap">' + esc(s.logic) + '</pre>'
+          + '</div>').join('');
+  }
+  document.getElementById('sp-trail').innerHTML = html;
+}
+
+// ---- right-click context menu ----
+let ctxTargetId = null;
+function showCtxMenu(node, ev) {
+  ctxTargetId = node.id();
+  const menu = document.getElementById('ctx-menu');
+  const box = document.getElementById('cy').getBoundingClientRect();
+  menu.style.left = (ev.clientX - box.left) + 'px';
+  menu.style.top  = (ev.clientY - box.top) + 'px';
+  menu.classList.remove('hidden');
+}
+function hideCtxMenu() { document.getElementById('ctx-menu').classList.add('hidden'); ctxTargetId = null; }
+function ctxAction(a) {
+  const id = ctxTargetId; hideCtxMenu();
+  if (!id) return;
+  const n = cy.getElementById(id); if (n.empty() || n.data('kind') === 'group') return;
+  lastTapped = id;
+  if (a === 'details') showDetails(parseInt(id.slice(1)));
+  else if (a === 'aggclasses') aggregateExpandNode(n);
+  else if (a === 'upstream') traceUpstream([parseInt(id.slice(1))], id);
+  else if (a === 'trail') showTrail(parseInt(id.slice(1)));
+  else if (a === 'hide') hideNode(n);
+  else if (a === 'focus') focusLast();
+  else if (a === 'remove') collapseSelected();
+}
+
+function renderPanelList() {
+  if (!panelGid) return;
+  const g = cy.getElementById(panelGid);
+  if (g.empty()) { closePanel(); return; }
+  const members = g.data('members') || [];
+  const q = document.getElementById('sp-search').value.toLowerCase();
+  const ul = document.getElementById('sp-list'); ul.innerHTML = '';
+  members.filter(m => (m.label||'').toLowerCase().includes(q)).forEach(m => {
+    const added = cy.getElementById('n' + m.id).nonempty();
+    const li = document.createElement('li');
+    li.className = 'px-3 py-1.5 cursor-pointer hover:bg-sky-50 flex items-center gap-2 ' + (added ? 'text-gray-400' : 'text-gray-800');
+    li.innerHTML = '<span class="inline-block w-2 h-2 rounded-full" style="background:' + colorFor(m.type) + '"></span>' +
+                   '<span class="flex-1 truncate">' + esc(m.label) + '</span>' + (added ? '<span class="text-xs">✓</span>' : '');
+    li.onclick = () => pinMember(m);
+    ul.appendChild(li);
+  });
+}
+function pinMember(m) {
+  const g = cy.getElementById(panelGid); if (g.empty()) return;
+  pushHist();
+  const before = _nodeIds();
+  pin(g, m); updateBubble(g); cleanupOrphans(); arrange(_newSince(before), g.id()); renderPanelList();
+}
+function addAllPanel() {
+  const g = cy.getElementById(panelGid); if (g.empty()) return;
+  pushHist();
+  const before = _nodeIds();
+  const q = document.getElementById('sp-search').value.toLowerCase();
+  (g.data('members') || []).filter(m => (m.label||'').toLowerCase().includes(q)).forEach(m => pin(g, m));
+  updateBubble(g); cleanupOrphans(); arrange(_newSince(before), g.id()); renderPanelList();
+}
+function clearPanelAdded() {                 // "Return all" -> whole class back into the bubble
+  const g = cy.getElementById(panelGid); if (g.nonempty()) { pushHist(); returnAll(g); }
+  renderPanelList();
+}
+
+// ---- aggregate (class-level) navigation ----
+function _panelMode(mode) {                  // 'class' | 'details' | 'agg' | 'trail'
+  document.getElementById('sp-classmode').classList.toggle('hidden', mode !== 'class');
+  document.getElementById('sp-details').classList.toggle('hidden', mode !== 'details');
+  document.getElementById('sp-aggmode').classList.toggle('hidden', mode !== 'agg');
+  document.getElementById('sp-trail').classList.toggle('hidden', mode !== 'trail');
+  document.getElementById('side-panel').classList.remove('hidden');
+  _renderToggle(mode);
+}
+function _renderToggle(mode) {               // instances<->classes switch, only for a class bubble
+  const show = !!panelBubbleId && (mode === 'class' || mode === 'agg');
+  document.getElementById('sp-toggle').classList.toggle('hidden', !show);
+  document.getElementById('sp-bubbleactions').classList.toggle('hidden', !show);
+  if (!show) return;
+  const active = 'bg-sky-600 text-white border-sky-600';
+  const idle = 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+  const inst = document.getElementById('sp-tab-inst'), cls = document.getElementById('sp-tab-cls');
+  const g = cy.getElementById(panelBubbleId);
+  inst.textContent = 'Instances' + (g.nonempty() ? ' (' + (g.data('count') || 0) + ')' : '');
+  inst.className = 'flex-1 rounded px-2 py-1 text-xs border ' + (mode === 'class' ? active : idle);
+  cls.className  = 'flex-1 rounded px-2 py-1 text-xs border ' + (mode === 'agg'  ? active : idle);
+}
+function bubbleShowInstances() { const g = cy.getElementById(panelBubbleId); if (g.nonempty()) openPanel(g); }
+function bubbleShowClasses()   { const g = cy.getElementById(panelBubbleId); if (g.nonempty()) aggregateExpand(g); }
+let aggSrcId = null, aggGroups = [];
+let aggSeedIds = [], indirectGroups = [];   // seed node ids for the reachability (indirect) query
+async function aggregateExpand(bubble) {      // right-click a class bubble -> its connected classes
+  aggSrcId = bubble.id();
+  panelBubbleId = bubble.id();   // a bubble -> the instances<->classes toggle applies
+  const ids = (bubble.data('members') || []).map(m => m.id);
+  aggSeedIds = ids; resetIndirect();
+  const res = await fetch('/lineage/api/class-neighbors', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  aggGroups = (await res.json()).groups || [];
+  document.getElementById('sp-title').textContent = 'From ' + bubble.data('type') + ' (' + bubble.data('count') + ')';
+  _panelMode('agg'); renderAggList();
+}
+async function aggregateExpandNode(node) {    // right-click an instance -> its connected classes (pick which)
+  aggSrcId = node.id();
+  panelBubbleId = null;   // an instance has no instance-list to toggle to
+  const nid = parseInt(node.id().slice(1));
+  aggSeedIds = [nid]; resetIndirect();
+  const res = await fetch('/lineage/api/class-neighbors', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: [nid] }),
+  });
+  aggGroups = (await res.json()).groups || [];
+  document.getElementById('sp-title').textContent = 'From ' + (node.data('label') || node.data('type'));
+  _panelMode('agg'); renderAggList();
+}
+function renderAggList() {
+  const ul = document.getElementById('sp-agglist'); ul.innerHTML = '';
+  if (!aggGroups.length) { ul.innerHTML = '<li class="px-3 py-2 text-gray-400 text-xs">No further connections.</li>'; return; }
+  aggGroups.forEach(g => {
+    const li = document.createElement('li');
+    li.className = 'px-3 py-1.5 cursor-pointer hover:bg-sky-50 flex items-center gap-2 text-gray-800';
+    li.innerHTML = '<span class="inline-block w-2 h-2 rounded-full" style="background:' + colorFor(g.type) + '"></span>'
+                 + '<span class="flex-1">' + esc(g.type) + ' <span class="text-gray-400">(' + g.count + ')</span></span>'
+                 + '<span class="text-[10px] text-gray-400">' + g.direction + '</span>';
+    li.onclick = () => addAggregateClass(g);
+    ul.appendChild(li);
+  });
+}
+function addAggregateClass(g, opts) {          // add a connected class as a new bubble off the source
+  const src = cy.getElementById(aggSrcId); if (src.empty()) return;
+  if (!(opts && opts.skipHist)) pushHist();
+  const before = _nodeIds();
+  const gid = 'agg_' + aggSrcId + '_' + g.direction + '_' + g.type;
+  if (cy.getElementById(gid).empty()) {
+    cy.add({ data: { id: gid, kind: 'group', type: g.type, count: g.count, total: g.count,
+                     color: colorFor(g.type), label: g.type + ' (' + g.count + ')', members: g.members,
+                     parent_node: aggSrcId, direction: g.direction } });
+    const rel = groupRel(g.members);
+    if (g.direction === 'downstream') addEdge(aggSrcId, gid, rel);
+    else addEdge(gid, aggSrcId, rel);
+  }
+  arrange(_newSince(before), aggSrcId);
+}
+function addAllAgg() { pushHist(); aggGroups.forEach(g => addAggregateClass(g, { skipHist: true })); }
+
+// ---- indirect (reachable) connections: jump to a class several hops away ----
+function resetIndirect() {
+  indirectGroups = [];
+  const ul = document.getElementById('sp-indirectlist'); if (ul) ul.innerHTML = '';
+  const btn = document.getElementById('sp-indirect-btn'); if (btn) { btn.textContent = 'Find…'; btn.disabled = false; }
+}
+async function findIndirect() {
+  if (!aggSeedIds || !aggSeedIds.length) return;
+  const usedOnly = document.getElementById('sp-used-only').checked;
+  const btn = document.getElementById('sp-indirect-btn'); btn.textContent = 'Finding…'; btn.disabled = true;
+  let groups = [];
+  try {
+    const res = await fetch('/lineage/api/reachable', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: aggSeedIds, direction: 'both', max_depth: 5, used_only: usedOnly }),
+    });
+    groups = (await res.json()).groups || [];
+  } catch (e) { groups = []; }
+  indirectGroups = groups.filter(g => (g.min_depth || 1) >= 2);   // >1 hop = genuinely indirect
+  indirectGroups.sort((a, b) => a.min_depth - b.min_depth);
+  renderIndirectList();
+  btn.textContent = 'Refresh'; btn.disabled = false;
+}
+function renderIndirectList() {
+  const ul = document.getElementById('sp-indirectlist'); ul.innerHTML = '';
+  if (!indirectGroups.length) { ul.innerHTML = '<li class="px-3 py-2 text-gray-400 text-xs">No indirect connections (click Find…).</li>'; return; }
+  indirectGroups.forEach(g => {
+    const li = document.createElement('li');
+    li.className = 'px-3 py-1.5 cursor-pointer hover:bg-amber-50 flex items-center gap-2 text-gray-800';
+    li.innerHTML = '<span class="inline-block w-2 h-2 rounded-full" style="background:' + colorFor(g.type) + '"></span>'
+                 + '<span class="flex-1">' + esc(g.type) + ' <span class="text-gray-400">(' + g.count + ')</span></span>'
+                 + '<span class="text-[10px] text-gray-400">' + g.direction + ' · ' + g.min_depth + ' hops</span>';
+    li.onclick = () => addReachableClass(g);
+    ul.appendChild(li);
+  });
+}
+function addReachableClass(g) {              // materialize an indirectly-reachable class via a shortcut edge
+  const src = cy.getElementById(aggSrcId); if (src.empty()) return;
+  pushHist();
+  const before = _nodeIds();
+  const gid = 'reach_' + aggSrcId + '_' + g.direction + '_' + g.type;
+  if (cy.getElementById(gid).empty()) {
+    cy.add({ data: { id: gid, kind: 'group', type: g.type, count: g.count, total: g.count,
+                     color: colorFor(g.type), label: g.type + ' (' + g.count + ')', members: g.members,
+                     parent_node: aggSrcId, direction: g.direction } });
+    if (g.direction === 'downstream') addShortcut(aggSrcId, gid, g.min_depth);
+    else addShortcut(gid, aggSrcId, g.min_depth);
+  }
+  arrange(_newSince(before), aggSrcId);
+}
+function addShortcut(src, tgt, hops) {
+  const id = 'sc_' + src + '_' + tgt;
+  if (cy.getElementById(id).nonempty()) return;
+  const e = cy.add({ data: { id, source: src, target: tgt, rel: '⤳ ' + hops + ' hops' } });
+  e.addClass('shortcut'); e.addClass('showrel');   // a shortcut always shows its hop count
+}
+
+async function traceUpstream(seedIds, anchorId) {   // add ALL upstream classes recursively, to the sources
+  if (!seedIds || !seedIds.length) return;
+  pushHist();
+  const before = _nodeIds();
+  const visited = new Set();
+  let frontier = [{ ids: seedIds, anchor: anchorId }];
+  let depth = 0;
+  while (frontier.length && depth < 12) {
+    const next = [];
+    for (const f of frontier) {
+      let groups = [];
+      try {
+        const res = await fetch('/lineage/api/class-neighbors', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: f.ids }),
+        });
+        groups = (await res.json()).groups || [];
+      } catch (e) { groups = []; }
+      groups.filter(g => g.direction === 'upstream').forEach(g => {
+        const sig = g.type + ':' + (g.members || []).map(m => m.id).sort().join(',');
+        if (visited.has(sig)) return;   // cycle / already covered on another branch
+        visited.add(sig);
+        const gid = 'up_' + f.anchor + '_' + g.type;
+        if (cy.getElementById(gid).empty()) {
+          cy.add({ data: { id: gid, kind: 'group', type: g.type, count: g.count, total: g.count,
+                           color: colorFor(g.type), label: g.type + ' (' + g.count + ')', members: g.members,
+                           parent_node: f.anchor, direction: 'upstream' } });
+          addEdge(gid, f.anchor, groupRel(g.members));   // upstream class feeds INTO the anchor
+        }
+        next.push({ ids: (g.members || []).map(m => m.id), anchor: gid });
+      });
+    }
+    frontier = next; depth++;
+  }
+  const created = _newSince(before);
+  if (created.length === 0) { msg('No further upstream classes.'); return; }
+  msg(''); arrange(created, anchorId);
+  if (!autoArrange) cy.fit(null, 40);
+}
+function traceUpstreamFromPanel() {
+  const g = cy.getElementById(panelBubbleId); if (g.empty()) return;
+  traceUpstream((g.data('members') || []).map(m => m.id), panelBubbleId);
+}
+
+async function loadNeighbors(nodeId, parentDomId) {
+  const before = _nodeIds();
+  const res = await fetch('/lineage/api/neighbors/' + nodeId);
+  const data = await res.json();
+  (data.groups || []).forEach(g => {
+    const gid = 'grp_' + nodeId + '_' + g.direction + '_' + g.type;
+    if (cy.getElementById(gid).nonempty()) return;
+    // Neighbours already on the canvas (e.g. the node we came from) get a direct
+    // edge, not a bubble; the bubble only counts the ones NOT yet shown.
+    const fresh = [];
+    (g.members || []).forEach(m => {
+      if (cy.getElementById('n' + m.id).nonempty()) {
+        if (g.direction === 'downstream') addEdge(parentDomId, 'n' + m.id, m.rel);
+        else addEdge('n' + m.id, parentDomId, m.rel);
+      } else { fresh.push(m); }
+    });
+    if (fresh.length === 0) return;   // nothing new -> no redundant bubble
+    cy.add({ data: { id: gid, kind: 'group', type: g.type, count: fresh.length, total: fresh.length,
+                     color: colorFor(g.type), label: g.type + ' (' + fresh.length + ')', members: fresh,
+                     parent_node: parentDomId, direction: g.direction } });
+    const rel = groupRel(fresh);
+    if (g.direction === 'downstream') addEdge(parentDomId, gid, rel);
+    else addEdge(gid, parentDomId, rel);
+  });
+  arrange(_newSince(before), parentDomId);
+}
+
+// The bubble represents the REMAINDER (instances not yet on the canvas): its
+// count drops as instances are pinned and it disappears at 0.
+function updateBubble(g) {
+  const c = g.data('count') || 0;
+  g.data('label', g.data('type') + ' (' + c + ')');
+  g.style('display', c > 0 ? 'element' : 'none');  // 0 -> hidden (all pulled out)
+}
+function hideEmptyBubbles() {
+  cy.nodes('[kind = "group"]').forEach(g => { if ((g.data('count')||0) <= 0) g.style('display','none'); });
+}
+function pin(g, m) {                       // move one instance from the bubble to the canvas
+  const existed = cy.getElementById('n' + m.id).nonempty();
+  const mid = addNode(m, 'node', g.id());
+  if (g.data('direction') === 'downstream') addEdge(g.data('parent_node'), mid, m.rel);
+  else addEdge(mid, g.data('parent_node'), m.rel);
+  if (!existed) g.data('count', (g.data('count')||0) - 1);
+}
+function cleanupOrphans() {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    cy.nodes('[kind = "group"]').forEach(gr => {
+      if (cy.getElementById(gr.data('parent_node')).empty()) { gr.remove(); changed = true; }
+    });
+    cy.nodes('[viaGroup]').forEach(nd => {
+      if (cy.getElementById(nd.data('viaGroup')).empty()) { nd.remove(); changed = true; }
+    });
+  }
+  pruneDisconnected();
+}
+// A class bubble that lost its last visible connection (e.g. its neighbour was
+// expanded into instances and the bubble emptied/hid) is left dangling from a
+// previous navigation — drop it rather than leave it floating.
+function pruneDisconnected() {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    cy.nodes('[kind = "group"]').forEach(g => {
+      if (!g.visible()) return;
+      const linked = g.connectedEdges().connectedNodes().filter(n => n.id() !== g.id() && n.visible());
+      if (linked.length === 0) { g.remove(); changed = true; }
+    });
+  }
+}
+function expandGroup(g) {                   // small class: pull all instances out -> bubble empties
+  pushHist();
+  const before = _nodeIds();
+  (g.data('members') || []).forEach(m => pin(g, m));
+  updateBubble(g); cleanupOrphans(); arrange(_newSince(before), g.id());
+}
+function returnAll(g) {                     // put a whole class back into its bubble
+  cy.nodes('[viaGroup = "' + g.id() + '"]').remove();
+  cleanupOrphans();
+  g.data('count', g.data('total'));
+  updateBubble(g); afterRemove();
+}
+function collapseNodeExpansion(node) {      // re-collapse only what THIS node expanded
+  const nid = node.id();
+  cy.nodes('[kind = "group"]').filter(g => g.data('parent_node') === nid).forEach(g => {
+    cy.nodes('[viaGroup = "' + g.id() + '"]').remove();  // instances pinned from that bubble
+    g.remove();                                          // the bubble itself
+  });
+  cleanupOrphans();                                      // cascade sub-expansions
+  node.data('expanded', false);                          // so a click can expand it again
+  afterRemove();
+}
+function collapseSelected() {               // "Remove": send a single instance back to its class
+  if (!lastTapped) { msg('Tap an instance first, then Remove.'); return; }
+  const n = cy.getElementById(lastTapped);
+  if (n.empty() || n.data('kind') === 'group') { msg('Select an instance node to remove.'); return; }
+  pushHist();
+  const gid = n.data('viaGroup');
+  n.remove(); cleanupOrphans();
+  if (gid) { const g = cy.getElementById(gid); if (g.nonempty()) { g.data('count', (g.data('count')||0) + 1); updateBubble(g); } }
+  lastTapped = null; msg(''); afterRemove();
+}
+function removeClass(gid) {                  // remove an exploded class bubble + its pinned instances
+  const g = cy.getElementById(gid); if (g.empty() || g.data('kind') !== 'group') return;
+  pushHist();
+  cy.nodes('[viaGroup = "' + gid + '"]').remove();   // instances pulled out of this bubble
+  g.remove();
+  cleanupOrphans();                                   // cascade anything that hung off it
+  if (panelBubbleId === gid) closePanel();
+  afterRemove();
+}
+function removeClassFromPanel() { if (panelBubbleId) removeClass(panelBubbleId); }
+
+cy.on('tap', 'node', evt => {
+  hideCtxMenu(); hideEdgeMenu(); hideBubbleMenu();
+  const n = evt.target;
+  if (n.data('kind') === 'group') {
+    if ((n.data('count') || 0) > SMALL_GROUP) openPanel(n);  // large -> searchable list
+    else expandGroup(n);                                     // small -> pull all instances out
+    return;
+  }
+  lastTapped = n.id();  // remember for Focus / Remove / Details
+  pushHist();
+  if (n.data('expanded')) collapseNodeExpansion(n);   // re-click -> collapse what THIS node expanded
+  else {                                              // click -> expand its neighbours
+    n.data('expanded', true);
+    loadNeighbors(parseInt(n.id().slice(1)), n.id());
+  }
+});
+cy.on('cxttap', 'node', evt => {                 // right-click
+  if (evt.originalEvent) evt.originalEvent.preventDefault();
+  const n = evt.target;
+  if (n.data('kind') === 'group') { showBubbleMenu(n, evt.originalEvent); return; }  // bubble -> menu (classes / instances / hide / remove)
+  showCtxMenu(n, evt.originalEvent);                              // instance -> Details / … / Hide / Focus / Remove
+});
+cy.on('tap', 'edge', evt => { if (evt.originalEvent) showEdgeMenu(evt.target, evt.originalEvent); });   // click a relationship -> show/reveal its type
+cy.on('tap', evt => { if (evt.target === cy) { hideCtxMenu(); hideEdgeMenu(); hideBubbleMenu(); if (focused) resetView(); } });   // background click closes menus and un-focuses
+cy.on('dbltap', evt => { if (evt.target === cy) cy.fit(null, 40); });
+// Suppress the native (Windows/browser) context menu across the whole canvas, so
+// right-click is always the app menu on nodes/bubbles and nothing jarring elsewhere.
+document.getElementById('cy').addEventListener('contextmenu', e => e.preventDefault());
+
+function clearCandidates() { document.getElementById('candidates').innerHTML = ''; }
+function renderCandidates(cands, q) {
+  const box = document.getElementById('candidates');
+  box.innerHTML = '<div class="text-xs text-gray-500 mb-1">' + cands.length +
+                  ' matches for "' + esc(q) + '" — pick one:</div>';
+  const wrap = document.createElement('div'); wrap.className = 'flex flex-wrap gap-2';
+  cands.forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'inline-flex items-center gap-1 rounded-full border border-gray-300 px-2.5 py-0.5 text-xs hover:bg-sky-50';
+    b.innerHTML = '<span class="inline-block w-2 h-2 rounded-full" style="background:' + colorFor(c.type) + '"></span>' +
+                  esc(c.label) + ' <span class="text-gray-400">' + esc(c.type) + '</span>';
+    b.onclick = () => { clearCandidates(); loadRoot(c); };
+    wrap.appendChild(b);
+  });
+  box.appendChild(wrap);
+}
+async function loadRoot(node) {
+  msg(''); clearCandidates(); cy.elements().remove(); closePanel();
+  currentRoot = node; focused = false;   // remember where we started (for Reset)
+  const rid = addNode(node, 'root');
+  cy.getElementById(rid).data('expanded', true);
+  await loadNeighbors(node.id, rid);
+  cy.fit(null, 40);
+}
+async function startFrom(q) {
+  msg(''); clearCandidates();
+  if (!q) return;
+  const res = await fetch('/lineage/api/find?q=' + encodeURIComponent(q));
+  const cands = (await res.json()).candidates || [];
+  if (cands.length === 0) { msg('No object matching "' + q + '".'); return; }
+  if (cands.length === 1) { loadRoot(cands[0]); return; }
+  renderCandidates(cands, q);   // let the user disambiguate
+}
+
+// ---- save / load explorations ----
+const LS_KEY = 'ade_explore_views';
+function _loadStore() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch (e) { return {}; } }
+function _saveStore(o) { localStorage.setItem(LS_KEY, JSON.stringify(o)); }
+function _snapshot() {
+  return { els: cy.elements().jsons(), pan: { ...cy.pan() }, zoom: cy.zoom(),
+           root: currentRoot, query: document.getElementById('q').value, ts: Date.now(), v: 1 };
+}
+function _restore(snap) {
+  if (!snap || !snap.els) { msg('Nothing to load.'); return; }
+  closePanel(); hideCtxMenu(); hideEdgeMenu(); hideBubbleMenu();
+  cy.elements().remove();
+  cy.add(snap.els);
+  if (snap.zoom && snap.pan) cy.viewport({ zoom: snap.zoom, pan: snap.pan });
+  if (snap.root) currentRoot = snap.root;
+  if (showAllRel) cy.edges().forEach(e => e.toggleClass('showrel', !!e.data('rel')));
+  hiddenNodes.clear(); updateHiddenBtn();
+  history = []; updateBackBtn();
+}
+function saveView() {
+  if (cy.elements().empty()) { msg('Nothing to save yet.'); return; }
+  const name = (prompt('Save this exploration as:') || '').trim();
+  if (!name) return;
+  const s = _loadStore(); s[name] = _snapshot(); _saveStore(s);
+  refreshSavedList(name); msg('Saved "' + name + '".');
+}
+function refreshSavedList(sel) {
+  const el = document.getElementById('savedviews'); if (!el) return;
+  const names = Object.keys(_loadStore()).sort();
+  el.innerHTML = '<option value="">Saved views…</option>'
+    + names.map(n => '<option' + (n === sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('')
+    + (names.length ? '<option value="__del__">— delete a view…</option>' : '');
+}
+function loadSavedView(name) {
+  if (!name) return;
+  if (name === '__del__') { deleteSavedView(); document.getElementById('savedviews').value = ''; return; }
+  const s = _loadStore();
+  if (s[name]) { pushHist(); _restore(s[name]); msg('Loaded "' + name + '".'); }
+}
+function deleteSavedView() {
+  const names = Object.keys(_loadStore()); if (!names.length) return;
+  const name = (prompt('Delete which saved view?\n' + names.join(', ')) || '').trim();
+  if (!name) return;
+  const s = _loadStore(); if (s[name]) { delete s[name]; _saveStore(s); refreshSavedList(); msg('Deleted "' + name + '".'); }
+}
+function exportView() {
+  if (cy.elements().empty()) { msg('Nothing to export yet.'); return; }
+  const blob = new Blob([JSON.stringify(_snapshot())], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lineage-explore-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importView(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => { try { pushHist(); _restore(JSON.parse(r.result)); msg('Imported view.'); } catch (e) { msg('Invalid view file.'); } };
+  r.readAsText(file);
+}
+
+refreshSavedList();
+loadAttrSchema();
+if ("{{ query }}".trim()) startFrom("{{ query|e }}");
+</script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{# In-app AI assistant: floating button + slide-over chat, expandable to full page.
+   Included once in base.html so it is present on every page. Server-rendered +
+   HTMX; the only JS is small vanilla glue (open/close, expand, enter-to-send,
+   auto-scroll). #}
+
+<style>
+  /* Full-page mode: the expand button toggles .assistant-fullpage on the panel.
+     Icons swap purely via this class (no JS icon juggling). */
+  .assistant-icon-collapse { display: none; }
+  #assistant-panel.assistant-fullpage .assistant-icon-expand { display: none; }
+  #assistant-panel.assistant-fullpage .assistant-icon-collapse { display: inline-flex; }
+</style>
+
+<!-- Floating launcher -->
+<button id="assistant-fab" type="button"
+        onclick="window.adeAssistant && window.adeAssistant.open()"
+        class="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-sky-600 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400">
+  &#10024; <span class="hidden sm:inline">Ask the catalog</span>
+</button>
+
+<!-- Slide-over (toggles to full page) -->
+<div id="assistant-panel"
+     class="fixed inset-y-0 right-0 z-50 w-full max-w-md translate-x-full transform bg-white shadow-2xl transition-transform duration-200 ease-in-out flex flex-col"
+     aria-hidden="true">
+
+  <!-- Inner column: caps line length + centres content in full-page mode -->
+  <div class="assistant-inner flex-1 flex flex-col min-h-0 w-full max-w-3xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-start justify-between border-b border-gray-200 px-4 py-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900">&#10024; Catalog Assistant</h2>
+        <p class="text-xs text-gray-400">Scope: {{ assistant_scope or g.org_name or 'active catalog' }}</p>
+      </div>
+      <div class="flex items-center gap-1">
+        <button type="button" title="Expand to full page / collapse"
+                onclick="window.adeAssistant && window.adeAssistant.toggleFull()"
+                class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+          <span class="assistant-icon-expand">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </span>
+          <span class="assistant-icon-collapse">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M16 3v3a2 2 0 0 0 2 2h3M21 16h-3a2 2 0 0 0-2 2v3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+          </span>
+        </button>
+        <button type="button" title="New conversation"
+                hx-post="/assistant/reset" hx-swap="none"
+                onclick="window.adeAssistant && window.adeAssistant.clear()"
+                class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 text-xs">&#8635;</button>
+        <button type="button" title="Close"
+                onclick="window.adeAssistant && window.adeAssistant.close()"
+                class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">&times;</button>
+      </div>
+    </div>
+
+    {% if not assistant_enabled %}
+    <!-- Disabled banner (no API key) -->
+    <div class="flex-1 overflow-y-auto p-4">
+      <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        The assistant is not configured. Set <code class="font-mono">ANTHROPIC_API_KEY</code>
+        (env or config.yaml) to enable natural-language catalog Q&amp;A.
+      </div>
+    </div>
+    {% else %}
+
+    <!-- Messages -->
+    <div id="assistant-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div class="rounded-2xl rounded-bl-sm bg-gray-100 px-3.5 py-2 text-sm text-gray-700 max-w-[90%]">
+        Hi! Ask me about this catalog — for example:
+        <div class="mt-2 flex flex-col gap-1.5">
+          <button type="button" class="assistant-suggestion text-left text-sky-700 hover:underline">How many reports are about sales?</button>
+          <button type="button" class="assistant-suggestion text-left text-sky-700 hover:underline">Which tables feed the "Total Revenue" measure?</button>
+          <button type="button" class="assistant-suggestion text-left text-sky-700 hover:underline">List the Fabric pipelines in the catalog.</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thinking indicator -->
+    <div id="assistant-thinking" class="htmx-indicator px-4 pb-1 text-xs text-gray-400">
+      &#10024; The assistant is thinking&hellip;
+    </div>
+
+    <!-- Input -->
+    <form id="assistant-form" class="border-t border-gray-200 p-3"
+          hx-post="/assistant/message"
+          hx-target="#assistant-messages"
+          hx-swap="beforeend"
+          hx-indicator="#assistant-thinking"
+          hx-disabled-elt="find textarea, find button[type=submit]"
+          hx-on::after-request="if(event.detail.successful){this.reset();}">
+      <div class="flex items-end gap-2">
+        <textarea id="assistant-input" name="message" rows="1" required
+                  placeholder="Ask about the catalog…"
+                  class="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400"></textarea>
+        <button type="submit"
+                class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-50">
+          Send
+        </button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Backdrop -->
+<div id="assistant-backdrop" class="fixed inset-0 z-40 hidden bg-black/20"
+     onclick="window.adeAssistant && window.adeAssistant.close()"></div>
+
+<script>
+(function () {
+  var panel = document.getElementById('assistant-panel');
+  var backdrop = document.getElementById('assistant-backdrop');
+  var messages = document.getElementById('assistant-messages');
+  var input = document.getElementById('assistant-input');
+
+  function scrollBottom() { if (messages) { messages.scrollTop = messages.scrollHeight; } }
+
+  window.adeAssistant = {
+    open: function () {
+      panel.classList.remove('translate-x-full');
+      panel.setAttribute('aria-hidden', 'false');
+      backdrop.classList.remove('hidden');
+      if (input) { setTimeout(function () { input.focus(); }, 150); }
+      scrollBottom();
+    },
+    close: function () {
+      panel.classList.add('translate-x-full');
+      panel.setAttribute('aria-hidden', 'true');
+      backdrop.classList.add('hidden');
+    },
+    toggleFull: function () {
+      var full = panel.classList.toggle('assistant-fullpage');
+      panel.classList.toggle('max-w-md', !full);
+      panel.classList.toggle('max-w-full', full);
+      if (input) { input.focus(); }
+      scrollBottom();
+    },
+    clear: function () {
+      if (!messages) { return; }
+      // Keep the first greeting bubble, drop the rest.
+      while (messages.children.length > 1) { messages.removeChild(messages.lastChild); }
+    }
+  };
+
+  // Suggestion chips populate + send.
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.classList.contains('assistant-suggestion')) {
+      if (input) { input.value = e.target.textContent.trim(); input.focus(); }
+    }
+  });
+
+  // Enter sends; Shift+Enter = newline.
+  if (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (input.value.trim()) {
+          if (window.htmx) { window.htmx.trigger('#assistant-form', 'submit'); }
+          else { document.getElementById('assistant-form').requestSubmit(); }
+        }
+      }
+    });
+  }
+
+  // Auto-scroll as messages arrive.
+  if (messages) {
+    messages.addEventListener('htmx:afterSwap', scrollBottom);
+    document.body.addEventListener('htmx:afterRequest', function (e) {
+      if (e.target && e.target.id === 'assistant-form') { scrollBottom(); }
+    });
+  }
+})();
+</script>

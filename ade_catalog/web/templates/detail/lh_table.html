@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.table_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.table_name }}</span>
+</nav>
+
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.table_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-teal-100 text-teal-700">Fabric</span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">Lakehouse Table</span>
+    </div>
+    <p class="mt-1 text-sm text-gray-500">{{ obj.workspace_name }} &rarr; {{ obj.lakehouse_name }} &rarr; {{ obj.schema_name }}</p>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Schema</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 font-mono">{{ obj.schema_name }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Rows</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">
+            {{ '{:,}'.format(obj.row_count) if obj.row_count else '—' }}
+        </p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Size</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">
+            {{ '{:,.1f}'.format(obj.size_mb) if obj.size_mb else '—' }} MB
+        </p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Lakehouse</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.lakehouse_name }}</p>
+    </div>
+</div>
+
+{% if obj.location %}
+<div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+    <p class="text-xs text-gray-500">OneLake Location</p>
+    <p class="text-sm font-medium text-gray-900 mt-1 font-mono break-all">{{ obj.location }}</p>
+</div>
+{% endif %}
+{% endblock %}

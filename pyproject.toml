@@ -1,0 +1,25 @@
+[project]
+name = "ade-catalog"
+version = "0.4.0-preview"
+description = "Agentic Data Engineer — Catalog (public preview): a local, SQLite metadata catalog for Databricks + Power BI with cross-platform lineage and an MCP server."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Roberto Butinar" }]
+dependencies = [
+    "flask>=3.0.0",
+    "Jinja2>=3.1.0",
+    "python-dotenv>=1.0.0",
+    "PyYAML>=6.0",
+    "sqlparse>=0.4.0",
+]
+
+[project.scripts]
+ade-catalog = "ade_catalog.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ade_catalog*"]

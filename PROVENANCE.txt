@@ -1,0 +1,2 @@
+Derived from the ade-catalog source @ 87c564c
+Profile: public | files: 157 | replacements: 20

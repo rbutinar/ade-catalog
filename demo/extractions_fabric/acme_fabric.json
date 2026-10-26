@@ -1,0 +1,71 @@
+{
+  "workspace": {
+    "id": "ws-acme-fabric-0001",
+    "displayName": "Acme Fabric",
+    "capacityRegion": "West Europe"
+  },
+  "warehouses": [
+    {
+      "id": "wh-acme-0001",
+      "name": "AcmeWH",
+      "sql_endpoint": "acmewh.datawarehouse.fabric.microsoft.com",
+      "description": "Acme curated warehouse (synthetic demo)"
+    }
+  ],
+  "lakehouses": [
+    {
+      "id": "lh-acme-0001",
+      "name": "AcmeLake",
+      "sql_endpoint": "acmelake.datalakehouse.fabric.microsoft.com",
+      "onelake_path": "abfss://acme@onelake.dfs.fabric.microsoft.com/AcmeLake",
+      "description": "Acme raw lakehouse (synthetic demo)"
+    }
+  ],
+  "pipelines": [
+    {
+      "id": "pl-load-sales-0001",
+      "name": "pl_load_sales",
+      "description": "Copies raw lakehouse data into the curated warehouse",
+      "activities": [
+        {
+          "name": "copy_orders",
+          "type": "Copy",
+          "category": "data_movement",
+          "source_type": "LakehouseTable",
+          "source_object": "AcmeLake.raw_orders",
+          "sink_type": "DataWarehouseTable",
+          "sink_object": "AcmeWH.fct_orders"
+        },
+        {
+          "name": "copy_customers",
+          "type": "Copy",
+          "category": "data_movement",
+          "source_type": "LakehouseTable",
+          "source_object": "AcmeLake.raw_customers",
+          "sink_type": "DataWarehouseTable",
+          "sink_object": "AcmeWH.dim_customer"
+        }
+      ]
+    },
+    {
+      "id": "pl-master-0001",
+      "name": "pl_master",
+      "description": "Master orchestrator",
+      "activities": [
+        {
+          "name": "run_load_sales",
+          "type": "ExecutePipeline",
+          "category": "orchestration"
+        }
+      ]
+    }
+  ],
+  "notebooks": [
+    {
+      "id": "nb-enrich-0001",
+      "name": "nb_enrich_sales",
+      "language": "python",
+      "description": "Enriches curated sales (synthetic demo)"
+    }
+  ]
+}

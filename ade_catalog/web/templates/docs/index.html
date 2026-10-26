@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Documentation - ade-catalog{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Documentation</h1>
+    <p class="mt-1 text-sm text-gray-500">Guides and references for using ade-catalog</p>
+</div>
+
+<!-- User guides (visible to all) -->
+<h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">User Guides</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <a href="{{ url_for('docs.getting_started') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <h2 class="text-lg font-semibold text-gray-900">Getting Started</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            What is ade-catalog, supported platforms, and key concepts.
+        </p>
+    </a>
+
+    <a href="{{ url_for('docs.using_catalog') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <h2 class="text-lg font-semibold text-gray-900">Using the Catalog</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            How to search, browse, filter, and explore metadata objects.
+        </p>
+    </a>
+
+    <a href="{{ url_for('docs.using_lineage') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <h2 class="text-lg font-semibold text-gray-900">Understanding Lineage</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            How to trace data flow across platforms using lineage graphs.
+        </p>
+    </a>
+
+    <a href="{{ url_for('docs.using_assistant') }}"
+       class="bg-white rounded-lg border border-gray-200 p-6 hover:border-sky-300 hover:shadow-sm transition-all">
+        <h2 class="text-lg font-semibold text-gray-900">&#10024; Using the Assistant</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Ask the catalog natural-language questions and jump straight to results.
+        </p>
+    </a>
+</div>
+
+<!-- Admin guides (visible to admin/owner only) -->
+{% if session.get('is_super_admin') or session.get('user_role') in ('owner', 'admin') %}
+<h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Admin Guides</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="{{ url_for('docs.onboarding') }}"
+       class="bg-white rounded-lg border border-amber-200 p-6 hover:border-amber-300 hover:shadow-sm transition-all">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 mb-3">Admin</span>
+        <h2 class="text-lg font-semibold text-gray-900">Onboarding a Client</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Create org, connect platforms, run extraction, import metadata.
+        </p>
+    </a>
+
+    <a href="{{ url_for('docs.architecture') }}"
+       class="bg-white rounded-lg border border-amber-200 p-6 hover:border-amber-300 hover:shadow-sm transition-all">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 mb-3">Admin</span>
+        <h2 class="text-lg font-semibold text-gray-900">Architecture</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Database backends, storage, MCP server, deployment, tech stack.
+        </p>
+    </a>
+
+    <a href="{{ url_for('docs.mcp_guide') }}"
+       class="bg-white rounded-lg border border-amber-200 p-6 hover:border-amber-300 hover:shadow-sm transition-all">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 mb-3">Admin</span>
+        <h2 class="text-lg font-semibold text-gray-900">MCP Server & AI Agents</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Connect AI assistants to the catalog via MCP protocol.
+        </p>
+    </a>
+</div>
+{% endif %}
+{% endblock %}

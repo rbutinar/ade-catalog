@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Getting Started - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Getting Started</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Getting Started</h1>
+
+    <div class="prose prose-sm max-w-none space-y-8">
+
+        <!-- What is ade-catalog -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">What is ade-catalog?</h2>
+            <p class="text-gray-700">
+                ade-catalog is a <strong>cross-platform analytics metadata catalog</strong>. It imports metadata
+                from your analytics platforms (Microsoft Fabric, Databricks, Power BI), builds cross-platform
+                lineage, and provides a navigable web UI and MCP server for AI agents.
+            </p>
+            <p class="text-gray-700 mt-3">
+                Think of it as a <strong>data dictionary on steroids</strong> — it knows what tables exist in your
+                warehouses, what notebooks process them, what measures visualize them, and how they all connect.
+            </p>
+        </section>
+
+        <!-- Supported Platforms -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Supported Platforms</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="border border-gray-100 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700">Fabric</span>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>Workspaces</li>
+                        <li>Warehouses + schemas/tables/columns</li>
+                        <li>Lakehouses + tables</li>
+                        <li>Pipelines + activities</li>
+                        <li>Notebooks</li>
+                    </ul>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">Databricks</span>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>Workspaces</li>
+                        <li>Notebooks + code analysis</li>
+                        <li>Table lineage (read/write)</li>
+                        <li>Jobs + task dependencies</li>
+                        <li>Medallion layers</li>
+                    </ul>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">Power BI</span>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>Reports + datasets</li>
+                        <li>Tables + columns</li>
+                        <li>DAX measures</li>
+                        <li>Relationships</li>
+                        <li>PBIP file parsing</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Concepts -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Key Concepts</h2>
+            <dl class="space-y-4">
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Organization</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        A tenant in the system. Each client (e.g., "Acme Corp", "Contoso") gets their own
+                        organization with isolated data and users.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">View</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        A snapshot of metadata within an organization. You might have "Production", "Dev",
+                        or "Production Fabric" views. Each scan creates or updates a view.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Extraction</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        The process of pulling metadata from a platform via its API. Produces JSON files
+                        that are stored in cloud storage.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Ingestion</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        The process of importing extracted JSON files into the catalog database,
+                        making them searchable and browsable.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">Lineage</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        The dependency graph connecting objects across platforms. Shows how data flows
+                        from source tables through notebooks/pipelines to Power BI reports.
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-semibold text-gray-900">MCP Server</dt>
+                    <dd class="text-sm text-gray-600 mt-1">
+                        A Model Context Protocol endpoint that allows AI assistants (Claude, etc.) to
+                        query the catalog, search metadata, and trace lineage programmatically.
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

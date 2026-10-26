@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - ade-catalog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full">
+    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+            <a href="{{ url_for('auth.landing') }}"
+               class="block text-center text-2xl font-bold tracking-tight text-gray-900">
+                ade<span class="text-sky-500">-catalog</span>
+            </a>
+            <h2 class="mt-6 text-center text-lg font-medium text-gray-900">Sign in to your account</h2>
+        </div>
+
+        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="mb-4 rounded-md p-3 text-sm
+                        {% if category == 'error' %}bg-red-50 text-red-700
+                        {% elif category == 'info' %}bg-blue-50 text-blue-700
+                        {% else %}bg-green-50 text-green-700{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
+                <input type="hidden" name="next" value="{{ next or '/' }}">
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input id="email" name="email" type="email" required autocomplete="email"
+                           value="{{ email or '' }}"
+                           class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm
+                                  shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" name="password" type="password" required autocomplete="current-password"
+                           class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm
+                                  shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                </div>
+
+                <button type="submit"
+                        class="w-full rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white
+                               shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2
+                               focus-visible:outline-offset-2 focus-visible:outline-sky-600">
+                    Sign in
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-gray-500">
+                Don't have an account?
+                <a href="{{ url_for('auth.signup') }}" class="font-semibold text-sky-600 hover:text-sky-500">
+                    Sign up
+                </a>
+            </p>
+            <p class="mt-4 text-center text-xs text-gray-400">
+                <a href="{{ url_for('auth.landing') }}" class="hover:text-gray-600">&larr; Back to overview</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!-- Container dropdown (loaded when workspace is selected) -->
+<label class="block text-xs text-gray-500 mb-1">Container</label>
+<select name="filter_container"
+        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white
+               focus:border-sky-500 focus:outline-none"
+        hx-get="/catalog/filters/schemas"
+        hx-trigger="change"
+        hx-target="#schema-filter"
+        hx-swap="innerHTML">
+    <option value="">All containers</option>
+    {% for c in containers %}
+    <option value="{{ c.container_type }}:{{ c.container_id }}">
+        {{ c.container_name }} ({{ c.container_type }})
+    </option>
+    {% endfor %}
+</select>

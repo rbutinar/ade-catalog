@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.page_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <a href="/detail/report/{{ obj.report_id }}" class="hover:text-gray-700">{{ obj.report_name }}</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.page_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.page_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">Power BI</span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-violet-100 text-violet-700">report page</span>
+        {% if obj.is_hidden %}
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">hidden</span>
+        {% endif %}
+    </div>
+    <p class="mt-1 text-sm text-gray-500">Report: {{ obj.report_name }}</p>
+</div>
+
+<!-- Summary: the page's own characteristics -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Visuals</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.visual_count or (visuals|length) }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Page number</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.page_number if obj.page_number is not none else '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Type</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.page_type or 'Standard' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Dimensions</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">
+            {% if obj.width and obj.height %}{{ obj.width }} &times; {{ obj.height }}{% else %}—{% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Contents (tree navigation into children) -->
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Visuals <span class="text-sm font-normal text-gray-400">({{ visuals|length }})</span></h2>
+    </div>
+    {% if visuals %}
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50"><tr>
+            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visual</th>
+            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+        </tr></thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for v in visuals %}
+            <tr>
+                <td class="px-5 py-3 text-sm"><a href="/detail/visual/{{ v.visual_id }}" class="text-sky-600 hover:text-sky-700 font-medium">{{ v.visual_name or v.visual_type }}</a></td>
+                <td class="px-5 py-3 text-sm text-gray-500">{{ v.visual_type }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-sm text-gray-400">No visuals recorded on this page.</div>
+    {% endif %}
+</div>
+{% endblock %}

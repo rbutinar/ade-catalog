@@ -1,0 +1,79 @@
+{# Reusable object-level lineage section for detail pages.
+   Shows a compact per-class summary (type -> count, coloured like the catalog
+   chips) and — only when the neighbourhood is small — an inline diagram. Rich
+   navigation is the interactive explorer. Expects `lineage` (get_lineage result
+   with class_counts) and `lineage_query`. #}
+{% set TYPE_CHIP = {
+  'report':'bg-indigo-100 text-indigo-700','dataset':'bg-amber-100 text-amber-700',
+  'semantic_table':'bg-sky-100 text-sky-700','table':'bg-sky-100 text-sky-700',
+  'view':'bg-sky-100 text-sky-700','delta_table':'bg-sky-100 text-sky-700',
+  'measure':'bg-pink-100 text-pink-700','visual':'bg-fuchsia-100 text-fuchsia-700',
+  'page':'bg-violet-100 text-violet-700','report_page':'bg-violet-100 text-violet-700',
+  'column':'bg-slate-200 text-slate-700','notebook':'bg-orange-100 text-orange-700',
+  'pipeline':'bg-purple-100 text-purple-700','activity':'bg-purple-100 text-purple-700',
+  'fabric_warehouse':'bg-blue-100 text-blue-700','warehouse':'bg-blue-100 text-blue-700',
+  'fabric_lakehouse':'bg-emerald-100 text-emerald-700','lakehouse':'bg-emerald-100 text-emerald-700',
+  'workspace':'bg-slate-100 text-slate-600','data_product':'bg-teal-100 text-teal-700','external':'bg-gray-100 text-gray-600'
+} %}
+{% if lineage %}
+<div class="bg-white rounded-lg border border-gray-200 mt-6">
+  <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-900">Lineage
+      <span class="text-sm font-normal text-gray-400">· {{ lineage.total_nodes }} connected</span>
+    </h2>
+    <a href="/lineage/explore?q={{ lineage_query|urlencode }}"
+       class="inline-flex items-center gap-1 rounded-md bg-sky-600 px-3 py-1 text-xs font-medium text-white hover:bg-sky-700">
+       Explore interactive lineage &rarr;</a>
+  </div>
+  <div class="p-5">
+    {# Compact per-class summary #}
+    {% if lineage.class_counts %}
+    <div class="flex flex-wrap gap-2 mb-4">
+      {% for c in lineage.class_counts %}
+      <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+            {{ TYPE_CHIP.get(c.type, 'bg-gray-100 text-gray-600') }}">
+        {{ c.type }} <span class="ml-1 opacity-70">({{ c.count }})</span>
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Inline diagram only when small enough to read; otherwise point to the explorer #}
+    {% if lineage.total_nodes and lineage.total_nodes <= 15 %}
+    <pre id="detail-mermaid-src" class="hidden">{{ lineage.mermaid }}</pre>
+    <div id="detail-graph-out" class="min-h-[160px] overflow-auto">
+      <p class="text-sm text-gray-400">Rendering&hellip;</p>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500">
+      This object connects to <b>{{ lineage.total_nodes }}</b> others — too many to draw here.
+      Open the <a href="/lineage/explore?q={{ lineage_query|urlencode }}" class="text-sky-600 hover:text-sky-700">interactive explorer</a>
+      to expand class by class.
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% if lineage.total_nodes and lineage.total_nodes <= 15 %}
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+  (async () => {
+    const src = document.getElementById('detail-mermaid-src');
+    const out = document.getElementById('detail-graph-out');
+    if (src && out && src.textContent.trim()) {
+      try {
+        const { svg } = await mermaid.render('detailLineageGraph', src.textContent.trim());
+        out.innerHTML = svg;
+      } catch (e) {
+        out.innerHTML = '<p class="text-sm text-red-500">Could not render graph: ' + e.message + '</p>';
+      }
+    }
+  })();
+</script>
+{% endif %}
+{% elif lineage_query %}
+<div class="bg-white rounded-lg border border-gray-200 mt-6 p-5 text-sm text-gray-400">
+  No lineage recorded for <span class="font-medium text-gray-600">{{ lineage_query }}</span>.
+  <a href="/lineage/explore?q={{ lineage_query|urlencode }}" class="text-sky-600 hover:text-sky-700 ml-1">Open the explorer &rarr;</a>
+</div>
+{% endif %}

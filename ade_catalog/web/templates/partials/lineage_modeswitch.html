@@ -1,0 +1,10 @@
+{# Mode switch between the interactive explorer and the classic depth/direction
+   view. `mode` is 'explore' or 'classic'; `query` (optional) is carried across. #}
+<div class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm shrink-0">
+  <a href="/lineage/explore{% if query %}?q={{ query|urlencode }}{% endif %}"
+     class="px-3 py-2 {% if mode == 'explore' %}bg-sky-600 text-white{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}"
+     title="Interactive graph explorer: expand classes/instances on demand">Interactive</a>
+  <a href="/lineage/{% if query %}?q={{ query|urlencode }}{% endif %}"
+     class="px-3 py-2 border-l border-gray-300 {% if mode == 'classic' %}bg-sky-600 text-white{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}"
+     title="Classic view: pick a depth + direction, rendered as a diagram">Classic</a>
+</div>

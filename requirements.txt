@@ -1,0 +1,8 @@
+# ade-catalog (public preview) — SQLite self-host edition.
+# No SQL Server (pyodbc), Supabase (psycopg2) or Fabric (msal) drivers: the public
+# edition is local + SQLite (stdlib). Those backends stay in the hosted/enterprise version.
+flask>=3.0.0
+Jinja2>=3.1.0
+python-dotenv>=1.0.0
+PyYAML>=6.0
+sqlparse>=0.4.0

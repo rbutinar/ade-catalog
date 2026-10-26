@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}MCP Server & AI Agents - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">MCP Server & AI Agents</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">MCP Server & AI Agents</h1>
+
+    <div class="space-y-8">
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">What is MCP?</h2>
+            <p class="text-sm text-gray-700">
+                <strong>Model Context Protocol (MCP)</strong> is an open standard that allows AI assistants
+                to interact with external tools and data sources. ade-catalog exposes its catalog as an MCP server,
+                so any MCP-compatible AI (Claude Desktop, Agent SDK, custom agents) can search, browse,
+                and trace lineage programmatically.
+            </p>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Endpoint</h2>
+            <div class="bg-gray-900 rounded p-4 text-sm font-mono text-green-400">
+                POST https://ade-catalog.vercel.app/mcp
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+                Discovery info available via GET on the same URL.
+            </p>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Claude Desktop Configuration</h2>
+            <div class="bg-gray-900 rounded p-4 text-sm font-mono text-green-400 overflow-x-auto">
+                <pre>{
+  "mcpServers": {
+    "ade-catalog": {
+      "url": "https://ade-catalog.vercel.app/mcp",
+      "headers": {
+        "X-API-Key": "your-api-key"
+      }
+    }
+  }
+}</pre>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Available Tools</h2>
+            <div class="space-y-4">
+                <div class="border border-gray-100 rounded p-4">
+                    <p class="text-sm font-semibold text-gray-900 font-mono">search_catalog</p>
+                    <p class="text-xs text-gray-500 mt-1">Search across all objects. Params: query, platform, object_type, limit</p>
+                    <p class="text-xs text-gray-400 mt-1 italic">"Find all tables related to sales in Fabric"</p>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <p class="text-sm font-semibold text-gray-900 font-mono">get_object_detail</p>
+                    <p class="text-xs text-gray-500 mt-1">Get full metadata for an object. Params: object_type, object_id</p>
+                    <p class="text-xs text-gray-400 mt-1 italic">"Show me details of pipeline ID 42"</p>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <p class="text-sm font-semibold text-gray-900 font-mono">list_platforms</p>
+                    <p class="text-xs text-gray-500 mt-1">List platforms with data in the catalog and their object counts.</p>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <p class="text-sm font-semibold text-gray-900 font-mono">get_dashboard_stats</p>
+                    <p class="text-xs text-gray-500 mt-1">Overview statistics: workspaces, notebooks, datasets, measures, etc.</p>
+                </div>
+                <div class="border border-gray-100 rounded p-4">
+                    <p class="text-sm font-semibold text-gray-900 font-mono">get_lineage</p>
+                    <p class="text-xs text-gray-500 mt-1">Trace upstream/downstream lineage. Params: node_name, direction, max_depth</p>
+                    <p class="text-xs text-gray-400 mt-1 italic">"What feeds into the gold_ft_sales table?"</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Example Request</h2>
+            <div class="bg-gray-900 rounded p-4 text-sm font-mono text-green-400 overflow-x-auto">
+                <pre>curl -X POST https://ade-catalog.vercel.app/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "search_catalog",
+      "arguments": {
+        "query": "sales",
+        "platform": "fabric",
+        "limit": 10
+      }
+    }
+  }'</pre>
+            </div>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+<!-- Fabric workspace children: containers (warehouses/lakehouses), pipelines, notebooks -->
+<div class="ml-4 border-l border-gray-300 pl-3 py-1 space-y-1">
+
+  {% if containers %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 mb-1">Containers</div>
+  {% for c in containers %}
+  <div>
+    <button
+      class="flex items-center gap-1 text-sm hover:bg-gray-100 rounded px-1 py-0.5 w-full text-left"
+      hx-get="{{ url_for('catalog.tree_fabric_container', container_type=c.container_type, container_id=c.container_id) }}"
+      hx-target="#fabric-container-{{ c.container_id }}"
+      hx-swap="innerHTML"
+      onclick="this.querySelector('.arrow').classList.toggle('rotate-90')"
+    >
+      <span class="arrow transition-transform text-gray-400">&#9654;</span>
+      {% if c.container_type == 'Warehouse' %}
+      <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1" title="Warehouse"></span>
+      {% else %}
+      <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1" title="Lakehouse"></span>
+      {% endif %}
+      <span class="text-gray-800">{{ c.container_name }}</span>
+      <span class="text-gray-500 text-xs ml-auto">{{ c.container_type }}</span>
+    </button>
+    <div id="fabric-container-{{ c.container_id }}"></div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if pipelines %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-2 mb-1">Pipelines</div>
+  {% for p in pipelines %}
+  <div>
+    <button
+      class="flex items-center gap-1 text-sm hover:bg-gray-100 rounded px-1 py-0.5 w-full text-left"
+      hx-get="{{ url_for('catalog.tree_fabric_pipeline', pipeline_id=p.pipeline_id) }}"
+      hx-target="#fabric-pipeline-{{ p.pipeline_id }}"
+      hx-swap="innerHTML"
+      onclick="this.querySelector('.arrow').classList.toggle('rotate-90')"
+    >
+      <span class="arrow transition-transform text-gray-400">&#9654;</span>
+      <span class="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1" title="Pipeline"></span>
+      <span class="text-gray-800">{{ p.pipeline_name }}</span>
+      {% if p.activity_count %}
+      <span class="text-gray-500 text-xs ml-auto">{{ p.activity_count }} activities</span>
+      {% endif %}
+    </button>
+    <div id="fabric-pipeline-{{ p.pipeline_id }}"></div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if notebooks %}
+  <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-2 mb-1">Notebooks</div>
+  {% for nb in notebooks %}
+  <div class="flex items-center gap-1 text-sm px-1 py-0.5 text-gray-700">
+    <span class="w-4"></span>
+    <span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1" title="Notebook"></span>
+    {{ nb.notebook_name }}
+    {% if nb.language %}
+    <span class="text-gray-400 text-xs ml-auto">{{ nb.language }}</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if not containers and not pipelines and not notebooks %}
+  <div class="text-sm text-gray-500 italic px-1">No items in this workspace</div>
+  {% endif %}
+
+</div>

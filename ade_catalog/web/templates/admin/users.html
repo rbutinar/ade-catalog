@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Users - Admin - ade-catalog{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Users</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ users|length }} registered user{{ 's' if users|length != 1 }}</p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Admin</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="mb-4 rounded-md p-3 text-sm
+            {% if category == 'error' %}bg-red-50 text-red-700
+            {% elif category == 'success' %}bg-green-50 text-green-700
+            {% else %}bg-blue-50 text-blue-700{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Create User Form -->
+<div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+    <h2 class="text-base font-semibold text-gray-900 mb-4">Create User</h2>
+    <form method="POST" action="{{ url_for('admin.create_user') }}" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-xs text-gray-500 mb-1">Email</label>
+            <input type="email" name="email" required placeholder="user@example.com"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none">
+        </div>
+        <div class="w-40">
+            <label class="block text-xs text-gray-500 mb-1">Password</label>
+            <input type="password" name="password" required minlength="6" placeholder="min 6 chars"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none">
+        </div>
+        <div class="w-48">
+            <label class="block text-xs text-gray-500 mb-1">Organization</label>
+            <select name="org_id" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
+                <option value="">— No org —</option>
+                {% for o in orgs %}
+                <option value="{{ o.org_id }}">{{ o.org_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-28">
+            <label class="block text-xs text-gray-500 mb-1">Role</label>
+            <select name="role" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white">
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+                <option value="owner">Owner</option>
+            </select>
+        </div>
+        <button type="submit"
+                class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500">
+            Create
+        </button>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organizations</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Sign In</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for u in users %}
+                <tr class="{% if u.user_metadata and u.user_metadata.get('disabled') %}bg-red-50{% endif %}">
+                    <td class="px-5 py-3">
+                        <p class="text-sm font-medium text-gray-900">{{ u.email }}</p>
+                        <p class="text-xs text-gray-400 font-mono">{{ (u.id|string)[:8] }}...</p>
+                    </td>
+                    <td class="px-5 py-3">
+                        {% set uid = u.id | string %}
+                        {% if uid in user_orgs %}
+                            {% for m in user_orgs[uid] %}
+                            <div class="flex items-center gap-1 mb-1">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-sky-100 text-sky-700">
+                                    {{ m.org_name }}
+                                </span>
+                                <span class="text-xs text-gray-400">{{ m.role }}</span>
+                                <form method="POST" action="{{ url_for('admin.remove_org', user_id=uid, org_id=m.org_id|default('')) }}" class="inline">
+                                    <button type="submit" class="text-xs text-red-400 hover:text-red-600" title="Remove">&times;</button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-xs text-gray-400 italic">No organization</span>
+                        {% endif %}
+                        <!-- Assign org inline -->
+                        <form method="POST" action="{{ url_for('admin.assign_org', user_id=uid) }}" class="flex items-center gap-1 mt-1">
+                            <select name="org_id" class="rounded border border-gray-200 px-1 py-0.5 text-xs bg-white">
+                                {% for o in orgs %}
+                                <option value="{{ o.org_id }}">{{ o.org_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="role" class="rounded border border-gray-200 px-1 py-0.5 text-xs bg-white">
+                                <option value="viewer">viewer</option>
+                                <option value="editor">editor</option>
+                                <option value="admin">admin</option>
+                                <option value="owner">owner</option>
+                            </select>
+                            <button type="submit" class="text-xs text-sky-600 hover:text-sky-800 font-medium">+ Add</button>
+                        </form>
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500">
+                        {% if u.last_sign_in_at %}
+                            {{ (u.last_sign_in_at|string)[:16] | replace('T', ' ') }}
+                        {% else %}
+                            <span class="text-gray-400 italic">Never</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3">
+                        {% if u.user_metadata and u.user_metadata.get('disabled') %}
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">Disabled</span>
+                        {% else %}
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">Active</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            {% if u.user_metadata and u.user_metadata.get('disabled') %}
+                            <form method="POST" action="{{ url_for('admin.enable_user', user_id=u.id) }}">
+                                <button type="submit" class="text-xs text-green-600 hover:text-green-800 font-medium">Enable</button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('admin.disable_user', user_id=u.id) }}">
+                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Disable</button>
+                            </form>
+                            {% endif %}
+                            <!-- Reset password -->
+                            <form method="POST" action="{{ url_for('admin.reset_password', user_id=u.id) }}" class="flex items-center gap-1">
+                                <input type="password" name="new_password" placeholder="new pw" minlength="6"
+                                       class="w-20 rounded border border-gray-200 px-1 py-0.5 text-xs">
+                                <button type="submit" class="text-xs text-amber-600 hover:text-amber-800 font-medium">Reset</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

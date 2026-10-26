@@ -1,0 +1,34 @@
+{# Edit mode of the description card (rendered inside #enrichment-box). #}
+{% set ctx = enrichment_ctx %}
+{% set e = ctx.enrichment %}
+<form hx-post="/enrich/{{ ctx.view_id }}/{{ ctx.object_class }}/{{ ctx.object_id }}"
+      hx-target="#enrichment-box" hx-swap="innerHTML">
+  <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-base font-semibold text-gray-900">Edit description</h2>
+    <div class="flex items-center gap-2">
+      <button type="button"
+              hx-get="/enrich/{{ ctx.view_id }}/{{ ctx.object_class }}/{{ ctx.object_id }}/card"
+              hx-target="#enrichment-box" hx-swap="innerHTML"
+              class="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50">
+        Cancel</button>
+      <button type="submit"
+              class="rounded-md bg-sky-600 px-3 py-1 text-xs font-medium text-white hover:bg-sky-700">
+        Save</button>
+    </div>
+  </div>
+  <div class="p-5 space-y-4">
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Business</label>
+      <textarea name="business_description" rows="3"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-400"
+                placeholder="Plain-language description for business users">{{ e.business_description if e and e.business_description else '' }}</textarea>
+    </div>
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">Technical</label>
+      <textarea name="technical_description" rows="3"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-sky-400"
+                placeholder="How it is built/derived, sources, logic">{{ e.technical_description if e and e.technical_description else '' }}</textarea>
+    </div>
+    <p class="text-xs text-gray-400">Saving marks this as human-edited; the AI enrich pass will not overwrite it.</p>
+  </div>
+</form>

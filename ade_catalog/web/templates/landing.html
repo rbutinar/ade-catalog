@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ade-catalog — discover, organize, and put your data assets to work</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full text-gray-900">
+
+    <!-- Top bar: brand left, Sign in top-right (SaaS convention) -->
+    <header class="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+            <a href="{{ url_for('auth.landing') }}" class="text-xl font-bold tracking-tight">
+                ade<span class="text-sky-500">-catalog</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}"
+               class="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm
+                      hover:bg-sky-500 focus-visible:outline focus-visible:outline-2
+                      focus-visible:outline-offset-2 focus-visible:outline-sky-600">
+                Sign in
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="bg-gray-900 text-white">
+        <div class="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 lg:grid-cols-2 lg:py-20">
+            <div>
+                <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                    Discover, organize, and put your<br class="hidden sm:block">
+                    <span class="text-sky-400">data assets</span> to work.
+                </h1>
+                <p class="mt-5 max-w-xl text-base leading-relaxed text-gray-300">
+                    ade-catalog helps you discover and organize the data assets scattered across
+                    your organization, then puts them to direct use — browsable in the app, and
+                    through integrations with the platforms and LLMs your teams already work
+                    with — supporting data discovery, assessment, and ongoing monitoring.
+                </p>
+                <div class="mt-8">
+                    <a href="#how" class="text-sm font-semibold text-sky-400 hover:text-sky-300">
+                        See how it works &darr;
+                    </a>
+                </div>
+            </div>
+
+            <figure class="overflow-hidden rounded-xl border border-white/10 shadow-2xl">
+                <img src="{{ url_for('static', filename='img/features-tour.gif') }}"
+                     alt="ade-catalog feature tour: metadata overview, catalog search, lineage navigation and the catalog assistant"
+                     class="block w-full">
+            </figure>
+        </div>
+    </section>
+
+    <!-- Value props -->
+    <section id="how" class="mx-auto max-w-6xl px-6 py-16">
+        <h2 class="text-center text-2xl font-bold tracking-tight">What you get</h2>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-gray-200 p-5">
+                <div class="text-sm font-semibold text-sky-600">Cross-platform lineage</div>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                    Discover assets across platforms and trace where data comes from and where
+                    it's used — end to end, across tool boundaries.
+                </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 p-5">
+                <div class="text-sm font-semibold text-sky-600">AI-assisted, human-reviewed</div>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                    Generated descriptions you can review and edit — human edits are protected
+                    and never silently overwritten on re-scan.
+                </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 p-5">
+                <div class="text-sm font-semibold text-sky-600">A catalog assistant</div>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                    Ask questions in plain language and get answers grounded in your own
+                    metadata, with links straight to the objects.
+                </p>
+            </div>
+            <div class="rounded-xl border border-gray-200 p-5">
+                <div class="text-sm font-semibold text-sky-600">Open integrations</div>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                    An open MCP interface plugs the catalog into the LLMs and tools your teams
+                    already use.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Part of the ADE family -->
+    <section class="border-t border-gray-200 bg-white">
+        <div class="mx-auto max-w-6xl px-6 py-16">
+            <h2 class="text-center text-2xl font-bold tracking-tight">Part of the ADE family</h2>
+            <p class="mx-auto mt-4 max-w-3xl text-center text-base leading-relaxed text-gray-600">
+                Independent, composable tools for agentic data engineering — use either on its own or together.
+                ade-catalog maps <span class="font-medium text-gray-900">what exists and how it's connected</span>;
+                ade-ops operates <span class="font-medium text-gray-900">what you run and where you deploy it</span>.
+                Map the territory, then operate it.
+            </p>
+
+            <div class="mt-10 grid gap-6 md:grid-cols-3">
+                <!-- ade-catalog (this product) -->
+                <div class="relative rounded-xl border-2 border-sky-200 bg-sky-50/40 p-6">
+                    <span class="absolute right-4 top-4 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">You're here</span>
+                    <h3 class="text-lg font-semibold">ade<span class="text-sky-500">-catalog</span></h3>
+                    <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                        Analyze, explore, and document your analytics environments — a navigable catalog of
+                        what exists and how it's connected.
+                    </p>
+                    <a href="https://github.com/rbutinar/ade-catalog" target="_blank" rel="noopener"
+                       class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-sky-500">
+                        Source on GitHub &#8599;
+                    </a>
+                </div>
+
+                <!-- ade-ops -->
+                <div class="rounded-xl border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold">ade<span class="text-sky-500">-ops</span></h3>
+                    <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                        Operate, sync, and deploy across your analytics platforms — Databricks, Power BI, Fabric —
+                        with people and AI agents in control.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-x-4 gap-y-1">
+                        <a href="https://github.com/rbutinar/ade-ops" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-sky-500">GitHub &#8599;</a>
+                        <a href="https://rbutinar.github.io/ade-ops/" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-sky-500">Docs &#8599;</a>
+                    </div>
+                </div>
+
+                <!-- ade-skills (planned) -->
+                <div class="rounded-xl border border-dashed border-gray-300 p-6 opacity-75">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-semibold text-gray-500">ade-skills</h3>
+                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Planned</span>
+                    </div>
+                    <p class="mt-2 text-sm leading-relaxed text-gray-500">
+                        A shared knowledge library for AI agents across the family.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Get started -->
+    <section class="border-t border-gray-200 bg-gray-50">
+        <div class="mx-auto max-w-6xl px-6 py-14">
+            <div class="mx-auto max-w-3xl text-center">
+                <h2 class="text-2xl font-bold tracking-tight">Get started right away</h2>
+                <p class="mt-4 text-base leading-relaxed text-gray-600">
+                    Run ade-catalog locally to scan the platforms your organization uses, then
+                    browse the results from your own machine — or publish them to make sharing
+                    with your team easy.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-gray-200">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-xs text-gray-400">
+            <span>ade<span class="text-sky-500">-catalog</span></span>
+            <span>Screens shown on synthetic demo data.</span>
+        </div>
+    </footer>
+</body>
+</html>

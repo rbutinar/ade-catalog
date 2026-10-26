@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Onboarding a Client - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="{{ url_for('docs.index') }}" class="hover:text-gray-700">Docs</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">Onboarding a Client</span>
+</nav>
+
+<div class="max-w-3xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Onboarding a Client</h1>
+
+    <div class="space-y-8">
+
+        <!-- Overview -->
+        <div class="bg-sky-50 border border-sky-200 rounded-lg p-5">
+            <p class="text-sm text-sky-800">
+                <strong>Summary:</strong> To add a new client to ade-catalog you need to:
+                create their organization, connect to their analytics platforms, extract metadata, and import it.
+                This guide covers each step.
+            </p>
+        </div>
+
+        <!-- Prerequisites -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Prerequisites</h2>
+            <p class="text-sm text-gray-700 mb-3">
+                Before you begin, make sure you have:
+            </p>
+            <table class="min-w-full text-sm">
+                <tbody class="divide-y divide-gray-100">
+                    <tr>
+                        <td class="py-2 pr-4 font-medium text-gray-900 w-40">Admin access</td>
+                        <td class="py-2 text-gray-600">An ade-catalog account with <strong>owner</strong> or <strong>admin</strong> role</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 pr-4 font-medium text-gray-900">Python 3.10+</td>
+                        <td class="py-2 text-gray-600">Installed on the machine where you'll run the extraction. <a href="https://www.python.org/downloads/" class="text-sky-600 hover:underline" target="_blank">Download Python</a></td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 pr-4 font-medium text-gray-900">ade-catalog repo</td>
+                        <td class="py-2 text-gray-600">
+                            Clone the repo and install dependencies:
+                            <div class="bg-gray-900 rounded p-3 mt-2 font-mono text-green-400 text-xs overflow-x-auto">
+                                git clone https://github.com/rbutinar/ade-catalog.git<br>
+                                cd ade-catalog<br>
+                                python -m venv .venv<br>
+                                .venv/bin/pip install -r requirements.txt <span class="text-gray-500"># macOS/Linux</span><br>
+                                <span class="text-gray-500"># or: .venv\Scripts\pip install -r requirements.txt (Windows)</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 pr-4 font-medium text-gray-900">Platform credentials</td>
+                        <td class="py-2 text-gray-600">
+                            Access to the client's analytics platforms. See details per platform below.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Step 1 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-sky-600 text-white text-sm font-bold">1</span>
+                <h2 class="text-lg font-semibold text-gray-900">Create Organization</h2>
+            </div>
+            <p class="text-sm text-gray-700 mb-3">
+                This step is done from the <strong>web UI</strong>. No terminal needed.
+            </p>
+            <ol class="text-sm text-gray-700 space-y-2 ml-4 list-decimal">
+                <li>Log in to ade-catalog as admin</li>
+                <li>Go to <a href="/admin/orgs" class="text-sky-600 hover:underline">Admin &rarr; Organizations</a></li>
+                <li>Fill in name (e.g. "Acme Corp") and slug (e.g. "acme-corp"), then click Create</li>
+                <li>Go to <a href="/admin/users" class="text-sky-600 hover:underline">Admin &rarr; Users</a></li>
+                <li>Create user accounts for the client and assign them to the new organization</li>
+            </ol>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-sky-600 text-white text-sm font-bold">2</span>
+                <h2 class="text-lg font-semibold text-gray-900">Extract Metadata</h2>
+            </div>
+            <p class="text-sm text-gray-700 mb-3">
+                This step runs from a <strong>terminal</strong> on any machine with Python and a web browser.
+                The extractor connects to the client's platform APIs, downloads metadata, and saves it as JSON files locally.
+            </p>
+
+            <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800 mb-4">
+                <strong>Why a terminal?</strong> Platform APIs require interactive authentication (browser login).
+                This cannot run from the web UI. After the first login, tokens are cached and subsequent runs don't need interaction.
+            </div>
+
+            <!-- Fabric -->
+            <div class="border border-gray-100 rounded p-4 mb-4">
+                <h3 class="text-sm font-semibold text-teal-700 mb-2">Microsoft Fabric</h3>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What you need:</strong> The client's Azure AD tenant domain (e.g. <code class="bg-gray-100 px-1 rounded">acme.com</code>)
+                    and an account with read access to their Fabric workspaces.
+                </p>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What it connects to:</strong> Microsoft Fabric REST API (<code class="bg-gray-100 px-1 rounded">api.fabric.microsoft.com</code>)
+                    and optionally SQL endpoints for table schemas.
+                </p>
+
+                <p class="text-xs font-semibold text-gray-700 mt-3 mb-1">Step A: See what's available (no data extracted)</p>
+                <div class="bg-gray-900 rounded p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                    .venv/bin/python -m ade_catalog.platforms.fabric.extractors.api_extractor \<br>
+                    &nbsp;&nbsp;--tenant acme.com --list --browser
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Opens your browser for login, then prints a list of accessible workspaces.</p>
+
+                <p class="text-xs font-semibold text-gray-700 mt-3 mb-1">Step B: Extract everything</p>
+                <div class="bg-gray-900 rounded p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                    .venv/bin/python -m ade_catalog.platforms.fabric.extractors.api_extractor \<br>
+                    &nbsp;&nbsp;--tenant acme.com --all --extract-sql \<br>
+                    &nbsp;&nbsp;--output ./my_extraction --browser
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                    <code class="bg-gray-100 px-1 rounded text-gray-700">--all</code> = all workspaces.
+                    <code class="bg-gray-100 px-1 rounded text-gray-700">--extract-sql</code> = also pull table/column schemas.
+                    <code class="bg-gray-100 px-1 rounded text-gray-700">--browser</code> = use browser auth (required when the tenant has conditional access).
+                </p>
+
+                <p class="text-xs font-semibold text-gray-700 mt-3 mb-1">Step C: Extract one workspace only</p>
+                <div class="bg-gray-900 rounded p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                    .venv/bin/python -m ade_catalog.platforms.fabric.extractors.api_extractor \<br>
+                    &nbsp;&nbsp;--tenant acme.com --workspace "PRD-Analytics" \<br>
+                    &nbsp;&nbsp;--output ./my_extraction --browser
+                </div>
+            </div>
+
+            <!-- Databricks -->
+            <div class="border border-gray-100 rounded p-4 mb-4">
+                <h3 class="text-sm font-semibold text-orange-700 mb-2">Databricks</h3>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What you need:</strong> Workspace URL and a personal access token (PAT).
+                    Generate a PAT from Databricks &rarr; User Settings &rarr; Access Tokens.
+                </p>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What it connects to:</strong> Databricks REST API via the Databricks SDK.
+                </p>
+                <div class="bg-gray-900 rounded p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                    <span class="text-gray-500"># Set credentials (one-time)</span><br>
+                    export DATABRICKS_HOST=https://adb-12345.azuredatabricks.net<br>
+                    export DATABRICKS_TOKEN=dapi-xxxxxxxxxxxx<br><br>
+                    <span class="text-gray-500"># Extract</span><br>
+                    .venv/bin/python -m ade_catalog.platforms.databricks.extractors.api_extractor \<br>
+                    &nbsp;&nbsp;--output ./my_extraction
+                </div>
+            </div>
+
+            <!-- Power BI -->
+            <div class="border border-gray-100 rounded p-4">
+                <h3 class="text-sm font-semibold text-amber-700 mb-2">Power BI</h3>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What you need:</strong> The <code class="bg-gray-100 px-1 rounded">.pbip</code> project folder
+                    (exported from Power BI Desktop via "Save as Power BI Project").
+                    No API access or credentials needed.
+                </p>
+                <p class="text-xs text-gray-500 mb-2">
+                    <strong>What it connects to:</strong> Nothing — it parses local files.
+                </p>
+                <div class="bg-gray-900 rounded p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                    .venv/bin/python -m ade_catalog.platforms.powerbi.importers.pbip_importer \<br>
+                    &nbsp;&nbsp;--input ./path/to/MyReport.pbip \<br>
+                    &nbsp;&nbsp;--output ./my_extraction
+                </div>
+            </div>
+
+            <!-- Output -->
+            <div class="bg-gray-50 rounded p-4 mt-4">
+                <p class="text-sm font-semibold text-gray-700 mb-2">What gets created?</p>
+                <p class="text-xs text-gray-600 mb-2">
+                    All extractors produce JSON files in the output directory:
+                </p>
+                <div class="text-xs font-mono text-gray-600">
+                    ./my_extraction/<br>
+                    &nbsp;&nbsp;fabric/<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;workspace_inventory.json<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;WorkspaceName/pipelines.json, notebooks.json, ...<br>
+                    &nbsp;&nbsp;databricks/<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;notebooks.json, jobs.json, tables.json<br>
+                    &nbsp;&nbsp;powerbi/<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;datasets.json
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-sky-600 text-white text-sm font-bold">3</span>
+                <h2 class="text-lg font-semibold text-gray-900">Import into Catalog</h2>
+            </div>
+            <p class="text-sm text-gray-700 mb-3">
+                Still from the terminal. This reads the JSON files from step 2 and loads them into the
+                ade-catalog database, making everything searchable in the web UI.
+            </p>
+            <div class="bg-gray-900 rounded p-3 text-sm font-mono text-green-400 overflow-x-auto">
+                <span class="text-gray-500"># Import the extracted data into a named view</span><br>
+                .venv/bin/python -m ade_catalog.ingest \<br>
+                &nbsp;&nbsp;--source ./my_extraction \<br>
+                &nbsp;&nbsp;--view "Acme Fabric"
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+                This auto-detects which platforms have data and imports each one.
+                Uses <strong>full-refresh</strong>: safe to run repeatedly — old data for this view is replaced.
+            </p>
+            <div class="bg-gray-50 rounded p-3 mt-3 text-xs text-gray-600">
+                <strong>Demo shortcut:</strong> To import the built-in demo data (no extraction needed):<br>
+                <code class="font-mono">.venv/bin/python -m ade_catalog.ingest --source demo</code>
+            </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="bg-white rounded-lg border border-gray-200 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-sky-600 text-white text-sm font-bold">4</span>
+                <h2 class="text-lg font-semibold text-gray-900">Browse the Catalog</h2>
+            </div>
+            <p class="text-sm text-gray-700 mb-3">
+                Back to the <strong>web UI</strong>. The imported data is now available:
+            </p>
+            <ol class="text-sm text-gray-700 space-y-2 ml-4 list-decimal">
+                <li>Use the <strong>View selector</strong> (top right) to switch to the new view</li>
+                <li>The <strong>Dashboard</strong> shows overview stats</li>
+                <li>The <strong>Catalog</strong> lets you search and browse all objects</li>
+                <li>Click any object to see its full detail (columns, measures, activities, etc.)</li>
+            </ol>
+        </section>
+
+        <!-- What's next -->
+        <section class="bg-gray-50 rounded-lg border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">What's Next</h2>
+            <ul class="text-sm text-gray-700 space-y-2 ml-4 list-disc">
+                <li><strong>Re-scan:</strong> Run extract + ingest again to refresh metadata</li>
+                <li><strong>Lineage:</strong> Once imported, cross-platform lineage is built automatically</li>
+                <li><strong>AI access:</strong> Connect Claude or other AI agents via the MCP server (see <a href="{{ url_for('docs.mcp_guide') }}" class="text-sky-600 hover:underline">MCP Guide</a>)</li>
+                <li><strong>Automation:</strong> Schedule recurring scans (coming soon)</li>
+            </ul>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

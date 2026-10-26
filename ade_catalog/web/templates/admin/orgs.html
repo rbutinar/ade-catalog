@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Organizations - Admin - ade-catalog{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Organizations</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ orgs|length }} organization{{ 's' if orgs|length != 1 }}</p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; Admin</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="mb-4 rounded-md p-3 text-sm
+            {% if category == 'error' %}bg-red-50 text-red-700
+            {% elif category == 'success' %}bg-green-50 text-green-700
+            {% else %}bg-blue-50 text-blue-700{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Create Org Form -->
+<div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+    <h2 class="text-base font-semibold text-gray-900 mb-4">Create Organization</h2>
+    <form method="POST" action="{{ url_for('admin.create_org') }}" class="flex gap-3 items-end">
+        <div class="flex-1">
+            <label class="block text-xs text-gray-500 mb-1">Name</label>
+            <input type="text" name="org_name" required placeholder="Acme Corp"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none">
+        </div>
+        <div class="w-48">
+            <label class="block text-xs text-gray-500 mb-1">Slug (URL-friendly)</label>
+            <input type="text" name="org_slug" required placeholder="acme-corp" pattern="[a-z0-9\-]+"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none">
+        </div>
+        <button type="submit"
+                class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500">
+            Create
+        </button>
+    </form>
+</div>
+
+<!-- Orgs Table -->
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Members</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for o in orgs %}
+                <tr>
+                    <td class="px-5 py-3 text-sm font-medium text-gray-900">{{ o.org_name }}</td>
+                    <td class="px-5 py-3 text-sm text-gray-500 font-mono">{{ o.org_slug }}</td>
+                    <td class="px-5 py-3">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                              {% if o.plan == 'enterprise' %}bg-purple-100 text-purple-700
+                              {% elif o.plan == 'pro' %}bg-sky-100 text-sky-700
+                              {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ o.plan }}
+                        </span>
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500">{{ o.member_count }}</td>
+                    <td class="px-5 py-3 text-sm text-gray-500">
+                        {{ o.created_at.strftime('%Y-%m-%d') if o.created_at else '—' }}
+                    </td>
+                    <td class="px-5 py-3">
+                        {% if o.is_active %}
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">Active</span>
+                        {% else %}
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-sm">
+                        <div class="flex items-center gap-3">
+                            <details class="inline-block">
+                                <summary class="cursor-pointer text-sky-600 hover:text-sky-500">Edit</summary>
+                                <form method="POST" action="{{ url_for('admin.edit_org', org_id=o.org_id) }}"
+                                      class="mt-2 flex flex-wrap items-end gap-2 bg-gray-50 p-3 rounded-md border border-gray-200">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Name</label>
+                                        <input name="org_name" value="{{ o.org_name }}" required
+                                               class="rounded border border-gray-300 px-2 py-1 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Slug</label>
+                                        <input name="org_slug" value="{{ o.org_slug }}" required pattern="[a-z0-9\-]+"
+                                               class="rounded border border-gray-300 px-2 py-1 text-sm font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Plan</label>
+                                        <select name="plan" class="rounded border border-gray-300 px-2 py-1 text-sm">
+                                            {% for p in ['free', 'pro', 'enterprise'] %}
+                                            <option value="{{ p }}" {% if o.plan == p %}selected{% endif %}>{{ p }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <label class="flex items-center gap-1 text-xs text-gray-600 pb-1">
+                                        <input type="checkbox" name="is_active" {% if o.is_active %}checked{% endif %}> Active
+                                    </label>
+                                    <button type="submit"
+                                            class="rounded bg-sky-600 px-3 py-1 text-sm font-medium text-white hover:bg-sky-500">Save</button>
+                                </form>
+                            </details>
+                            <form method="POST" action="{{ url_for('admin.delete_org', org_id=o.org_id) }}"
+                                  onsubmit="return confirm('Delete organization {{ o.org_name }}? Its memberships are removed. (Blocked if it still has views/data.)');">
+                                <button type="submit" class="text-red-600 hover:text-red-500">Delete</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.delete_org', org_id=o.org_id) }}"
+                                  onsubmit="return confirm('DELETE {{ o.org_name }} AND all its views + data? This is irreversible.');">
+                                <input type="hidden" name="cascade" value="1">
+                                <button type="submit" class="text-red-700 hover:text-red-600 font-medium">Delete + data</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

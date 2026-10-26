@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.lakehouse_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.lakehouse_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.lakehouse_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-teal-100 text-teal-700">Fabric</span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">Lakehouse</span>
+    </div>
+    <p class="mt-1 text-sm text-gray-500">{{ obj.workspace_name }}</p>
+</div>
+
+<!-- Metadata cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Workspace</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ obj.workspace_name }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">SQL Endpoint</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 font-mono truncate">{{ obj.sql_endpoint or '—' }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Schemas</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ schemas|length }}</p>
+    </div>
+</div>
+
+{% if obj.onelake_path %}
+<div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+    <p class="text-xs text-gray-500">OneLake Path</p>
+    <p class="text-sm font-medium text-gray-900 mt-1 font-mono break-all">{{ obj.onelake_path }}</p>
+</div>
+{% endif %}
+
+<!-- Schema browser -->
+{% if schemas %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <!-- Schema selector -->
+    <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900">Tables</h2>
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500">Schema:</label>
+            <select onchange="window.location.href='/detail/lakehouse/{{ obj.lakehouse_id }}?schema_id=' + this.value"
+                    class="rounded-md border border-gray-300 px-2 py-1 text-sm bg-white">
+                {% for s in schemas %}
+                <option value="{{ s.schema_id }}" {% if s.schema_id == selected_schema_id %}selected{% endif %}>
+                    {{ s.schema_name }}
+                    {% if s.table_count is defined %}({{ s.table_count }} tables){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Tables list -->
+    {% if tables %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
+                    <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rows</th>
+                    <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Size</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for t in tables %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-5 py-3">
+                        {% if t.table_id %}
+                        <a href="/detail/lh_table/{{ t.table_id }}" class="text-sm font-medium text-sky-700 hover:text-sky-900">
+                            {{ t.table_name }}
+                        </a>
+                        {% else %}
+                        <p class="text-sm font-medium text-gray-900">{{ t.table_name }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500 text-right font-mono">
+                        {{ '{:,}'.format(t.row_count) if t.row_count else '—' }}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500 text-right font-mono">
+                        {% if t.size_mb %}
+                            {% if t.size_mb >= 1024 %}{{ '{:,.1f}'.format(t.size_mb / 1024) }} GB
+                            {% else %}{{ '{:,.1f}'.format(t.size_mb) }} MB{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-xs text-gray-400 font-mono truncate max-w-[200px]">
+                        {{ t.location or '' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-sm text-gray-400">
+        No tables in this schema — run extractor with <code class="bg-gray-100 px-1 rounded">--extract-sql</code>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-400">
+    No schemas extracted — run extractor with <code class="bg-gray-100 px-1 rounded">--extract-sql</code>
+</div>
+{% endif %}
+{% endblock %}

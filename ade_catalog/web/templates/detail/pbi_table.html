@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.table_name }} - ade-catalog{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="flex mb-6 text-sm text-gray-500">
+    <a href="/catalog" class="hover:text-gray-700">Catalog</a>
+    <span class="mx-2">/</span>
+    <a href="/detail/dataset/{{ obj.dataset_id }}" class="hover:text-gray-700">{{ obj.dataset_name }}</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 font-medium">{{ obj.table_name }}</span>
+</nav>
+
+<!-- Header -->
+<div class="mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ obj.table_name }}</h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+            Power BI
+        </span>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600">
+            {{ obj.source_type }}
+        </span>
+    </div>
+    <p class="mt-1 text-sm text-gray-500">{{ obj.report_name }} &rarr; {{ obj.dataset_name }}</p>
+</div>
+
+<!-- Metadata -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Rows</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">
+            {{ '{:,}'.format(obj.row_count) if obj.row_count else '—' }}
+        </p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Columns</p>
+        <p class="text-2xl font-semibold text-gray-900 mt-1">{{ obj.column_count or 0 }}</p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Source Table</p>
+        <p class="text-sm font-medium text-gray-900 mt-1 font-mono truncate">
+            {% if obj.source_database %}{{ obj.source_database }}.{% endif %}
+            {% if obj.source_schema %}{{ obj.source_schema }}.{% endif %}
+            {{ obj.source_table or '—' }}
+        </p>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs text-gray-500">Calculated</p>
+        <p class="text-sm font-medium text-gray-900 mt-1">{{ 'Yes' if obj.is_calculated_table else 'No' }}</p>
+    </div>
+</div>
+
+<!-- Description -->
+{% if obj.description %}
+<div class="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+    <p class="text-sm text-gray-700">{{ obj.description }}</p>
+</div>
+{% endif %}
+
+<!-- Columns -->
+{% if columns %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">
+            Columns
+            <span class="text-sm font-normal text-gray-400">({{ columns|length }})</span>
+        </h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase">Key</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for c in columns %}
+                <tr class="{% if c.is_key %}bg-sky-50{% endif %}">
+                    <td class="px-5 py-3 text-sm font-medium text-gray-900">
+                        {{ c.column_name }}
+                        {% if c.is_calculated %}
+                        <span class="text-xs text-purple-600 ml-1">calc</span>
+                        {% endif %}
+                        {% if c.is_hidden %}
+                        <span class="text-xs text-gray-400 ml-1">hidden</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500 font-mono">{{ c.data_type or '—' }}</td>
+                    <td class="px-5 py-3 text-sm text-center">
+                        {% if c.is_key %}
+                        <span class="text-sky-600 font-bold">PK</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-5 py-3 text-sm text-gray-500">{{ c.description or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="bg-white rounded-lg border border-gray-200 p-8 text-center text-sm text-gray-400">
+    No column metadata available
+</div>
+{% endif %}
+{% endblock %}
